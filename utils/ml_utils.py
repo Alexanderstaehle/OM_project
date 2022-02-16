@@ -2,6 +2,57 @@ import os
 
 import torch
 from torch.autograd import Variable
+from sam import SAM
+
+
+def train_sam(train_dataloader, batch_size, model, base_optimizer, criterion, learning_rate, epochs, device):
+    train_loss = []
+    train_acc = []
+
+    total_batch = len(train_dataloader.dataset) // batch_size
+    
+    # momentum ist ein Parameter der hier nicht spezifiziert werden sollte sondern anders übergeben werden sollte. Dieser Parameter gehört zu den Parametern des Base_optimizers
+    optimizer = SAM(model.parameters(), base_optimizer, lr = learning_rate, momentum = 0.9)
+
+    for epoch in range(epochs):
+        avg_cost = 0
+        epoch_loss = []
+        epoch_acc = []
+
+        for i, batch in enumerate(train_dataloader):
+            batch_X, batch_Y = (b.to(device) for b in batch)
+            X, Y = Variable(batch_X), Variable(batch_Y)
+
+            optimizer.zero_grad()
+
+            hypothesis = model(X)
+            cost = criterion(hypothesis, Y)
+            cost.backward()
+            optimizer.first_step(zero_grad=True)
+
+            hypothesis = model(X)
+            cost = criterion(hypothesis, Y)
+            cost.backward()
+            optimizer.second_step(zero_grad=True)
+
+            prediction = hypothesis.data.max(dim=1)[1]
+            epoch_acc.append(((prediction.data == Y.data).float().mean()).item())
+            epoch_loss.append(cost.item())
+
+            if i % 200 == 0:
+                print("Epoch= {},\t batch = {},\t cost = {:2.4f},\t accuracy = {}".format(epoch + 1, i, epoch_loss[-1],
+                                                                                          epoch_acc[-1]))
+
+            avg_cost += cost.data / total_batch
+        train_loss.append(sum(epoch_loss) / len(epoch_loss))
+        train_acc.append(sum(epoch_acc) / len(epoch_acc))
+        print("[Epoch: {:>4}], averaged cost = {:>.9}".format(epoch + 1, avg_cost.item()))
+
+    path = f'tmp/{type(model).__name__}'
+    os.makedirs(path, exist_ok=True)
+    torch.save(model.state_dict(), os.path.join(path, f'model_{batch_size}_{learning_rate}.pth'))
+    print(f'Learning finished with batch size {batch_size} and lr {learning_rate}')
+    return {"train_loss": train_loss, "train_acc": train_acc}
 
 
 def train(train_dataloader, test_dataloader, batch_size, model, optimizer, criterion, learning_rate, epochs, device):

@@ -2,7 +2,9 @@
 
 \usepackage{hyperref}
 \usepackage{graphicx}	% For figure environment
-
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
 
 \begin{document}
 \title{Writing Scientific Papers and Software}
@@ -15,18 +17,39 @@
 \maketitle
 
 \begin{abstract}
-  A critical part of scientific discovery is the
-  communication of research findings to peers or the general public.
-  Mastery of the process of scientific communication improves the
-  visibility and impact of research. While this guide is a necessary
-  tool for learning how to write in a manner suitable for publication
-  at a scientific venue, it is by no means sufficient, on its own, to
-  make its reader an accomplished writer. 
-  This guide should be a starting point for further development of 
-  writing skills.
+  Eine kritische Entscheidung bei der Verwendung von SGD Varianten ist die größe der Batch size. In der Vergangenheit hat sich gezeigt, dass bei der Verwendung großer Batch sizes eine Generalisierungslücke entsteht. Diese lässt sich (bedingt) durch eine größere Learning rate ausgleichen, allerdings bleiben die gefundenen Minima meist schärfer als bei kleineren Batch Sizes. Innerhalb dieses Projektes wird evaluiert, ob sich eine Formulierung, die die sharpness von Minimizern reguliert, eignet, um die Probleme großer Batch sizes auszugleichen. 
 \end{abstract}
 
 \section{Introduction}
+
+Deep Learning ist zu einem populären Standardansatz geworden um (unter anderem) Klassifizierungsprobleme zu lösen. 
+Das dabei (bei Deep Learning) zu lösende (nicht-konvexe) Optimierungsproblem ist von der Form 
+\begin{equation}
+\min_{w \in \mathbb{R}^d}{f(w) := \frac{1}{M} \sum_{i = 1}^M{f_i(w)}},1
+\end{equation}
+wobei $f_i$ die Lossfunktion ist, die den Verlust für Datenpunkt $i \in \{1, 2, ..., M\}$ berechnet. $M$ ist dabei die Anzahl der Datenpunkte und $w$ der Gewichtsvektor. 
+Meistens verwendet man zur Minimierung solcher Stochastic Gradient Descent (SGD) Varianten. Hierbei wird $f$ minimiert, indem man iterativ Schritte der Form
+\begin{equation}
+x_{k+1} = x_k - \alpha_k \biggl(\frac{1}{|B_k|} \sum_{i = 1}^{|B_k|}{\nabla f_i(w_k) \biggl)}.
+\end{equation}
+Dabei ist $B_k \subset \{1,2,..., M\}$ ein zufällig ausgewählter Batch der größe $B$ (besser anderer Buchstabe) und $\alpha_k$ die learning rate im Iterationsschritt $k$. Üblicherweise verwendet man hierbei Batches der Größe $B \in \{32, 64, ..., 512\}$, wobei $B \ll M$. (Eventuell noch ergänzen, was die Vorteile bei der Verwendung von SGD ist und außerdem Verweise auf Paper einfügen, in denen der Vorteil dieser Batches aufgezeigt wurde.)
+
+Da diese eher kleinen Batches eine "computational" Herausforderung sind (eventuell Verweise oder Begründung anbringen), wurde in der Vergangenheit untersucht, welche Auswirkungen größere Batch sizes auf den Lernprozess und die endgültigen Gewichte haben. (Evtl. Gewichte durch Resultat oder sowas austauschen) 
+Allgemein zeigt sich, dass unter Verwendung größerer Batches eine größere Generalisierungslücke entsteht, die unter anderem durch sogenannte "scharfe Minima" entsteht \cite{keskar2017largebatch}. Diese kann zum Teil durch eine angepasste learning Rate ausgeglichen werden \cite{goyal2018accurate}, die scharfen Minima bleiben allerdings bestehen. 
+Daher gab es zuletzt (zuletzt ist eine suboptimale Formulierung) Bestrebungen, eine Problemformulierung zu entwickeln, die nicht nur die gegebene Lossfunktion minimiert, sondern gleichzeitig die schärfe der Minima reguliert \cite{foret2021sharpnessaware}. 
+
+Innerhalb dieses Projektes wird nun evaluiert, inwiefern sich SAM eignet, um ein Training mit großen Batches zu ermöglichen. 
+
+Wir werden hierzu ein sehr einfaches neurales Netz zur Bilderkennung einmal unter Verwendung von SGD mit kleinen bis moderaten Batchsizes trainieren und zum Vergleich SAM auf große Batches anwenden. 
+
+Die sich dabei ergenden Minima werden auf ihre Schärfe hin untersucht, es wird evaluiert, in welchem Setting die Modelle besser generalisieren und wie die Laufzeit der jeweiligen Ansätze ist. 
+Außerdem evaluieren wir, in welchem Zusammenhang learning Rate und Batch Size im SGD Szenario stehen und überprüfen, ob sich dieser Zusammenhang auch unter der Verwendung von SAM zeigt. 
+ 
+In \cite{keskar2017largebatch}
+
+
+
+
 
 The aim of writing a paper is to infect the mind of your reader with
 the brilliance of your idea~\cite{jones08}. 

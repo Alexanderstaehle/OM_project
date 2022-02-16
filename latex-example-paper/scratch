@@ -1,0 +1,39 @@
+Abstract:
+
+- the context or background information for your research; the general topic under study; the specific topic of your research
+	- Wir testen SGD/ Adam mit großen Batch sizes. Es hat sich in der Vergangenheit gezeigt, dass bei der Verwendung großer Batches eine Generalisierungslücke entsteht, die sich durch Anpassung der Learning rate nicht beheben lässt. Diese geht vermutlich zurück auf steile Minima.  
+    
+- the central questions or statement of the problem your research addresses
+	- Wir versuchen zunächst die Findings (scharp Minimizers, learning rate gleicht Train aber nicht test error aus, small batches erkunden ein größeres Gebiet, etc..) zu reproduzieren und vergleichen die Resultate mit denen die bei der Verwendung von SAM entstehen. 
+- what’s already known about this question, what previous research has done or shown
+	- Bisher hat sich gezeigt, dass unter Verwendung großer Batch sizes eine Generalisierungslücke entsteht. Zwar lassen sich einige Probleme die unter Verwendung großer Batch Sizes entstehen ausgleichen, allerdings lässt sich das Problem scharfer Minimizer unter Verwendung von SGD nicht durch Anpassung der learning rate oder ähnlicher Maßnahmen beheben lässt. 
+	- Ebenso wurde versucht Erklärungen für die Entstehung der Unterschiede in den Minimizern bereitzustellen und diese empirisch zu validieren. Wir versuchen das ganze zu reproduzieren und mit SAM zu vergleichen. 
+- the main reason(s), the exigency, the rationale, the goals for your research—Why is it important to address these questions? Are you, for example, examining a new topic? Why is that topic worth examining? Are you filling a gap in previous research? Applying new methods to take a fresh look at existing ideas or data? Resolving a dispute within the literature in your field? . . .
+	- Unser Projekt soll zum einen die Ergebnisse vorangeganger Forschung validieren und prüfen, ob die charakteristischen Unterschiede in den Lösungen unter Verwendung jeweils großer und kleiner Batch sizes auch bei anderen Datensätzen und Architekturen der neuronalen Netze auftritt. Des weiteren wollen wir überprüfen, ob unter Verwendung von SAM die Minima auch die gleichen Charakterisitka aufweisen und ob sich die verminderte Sharpness auch auf andere Charakteristika ausweitet. 
+
+- your research and/or analytical methods
+	- Wir probieren unterschiedliche Batch Sizes in Kombination mit unterschiedlichen Optimizern und Learning rates aus und analysieren deren Lösungen auf verschiedene Eigenschaften hin. 
+	
+Introduction: 
+
+- Erkläre kurz was Deep Learning ist. 
+- Erkläre kurz, was SGD ist. 
+- Erkläre kurz, was wir als Large batches definieren. 
+- Erkläre kurz, was die bisherigen Drawbacks von Large Batches sind. 
+- Erkläre in dem Zusammenhang was SAM ist. 
+- Erkläre, dass das SAM Paper nicht detailliert darauf eingeht, ob der Vorteil, der durch die Verwendung von SAM entsteht, sich gerade bei großen Batch sizes auszahlt. 
+- Außerdem erkläre auch, dass wir SGD small batches gegen SGD large batches + SAM testen und vergleichen. 
+- Was sind die Vorteile hinsichtlich der Laufzeit. 
+- Verweise hierbei einerseits auf das "On Large Batch sizes" Paper als auch auf das "SAM" Paper und stelle heraus, wo der Unterschied zu dem SAM Paper ist.  
+
+Methods and Models: 
+
+- Einerseits erklären wir hier die Architektur(en) unseres Netzwerkes. 
+- Außerdem führen wir die Metriken ein, mit denen wir die Charakteristika der einzelnen Optima erfassen und bewerten. 
+	- Hierzu zählt einmal das approximierte mathematische Maß für Sharpness;
+	- dann auch der Abstand von den initialen Weights. 
+	- eventuell noch die Verteilung der Gradient updates. 
+	- die m-sharpness. 
+- Erklären, dass wir die Anzahl an Trainingsepochen mal der Anzahl an "gesehenen Samples" normieren. 
+
+
