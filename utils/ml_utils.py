@@ -4,9 +4,11 @@ import torch
 from torch.autograd import Variable
 
 
-def train(train_dataloader, batch_size, model, optimizer, criterion, learning_rate, epochs, device):
+def train(train_dataloader, test_dataloader, batch_size, model, optimizer, criterion, learning_rate, epochs, device):
     train_loss = []
     train_acc = []
+    test_loss = []
+    test_acc = []
 
     total_batch = len(train_dataloader.dataset) // batch_size
 
@@ -38,18 +40,19 @@ def train(train_dataloader, batch_size, model, optimizer, criterion, learning_ra
             avg_cost += cost.data / total_batch
         train_loss.append(sum(epoch_loss) / len(epoch_loss))
         train_acc.append(sum(epoch_acc) / len(epoch_acc))
+        test_1, test_2 = test(test_dataloader, model, criterion, device)
+        test_loss.append(test_1)
+        test_acc.append(test_2)
         print("[Epoch: {:>4}], averaged cost = {:>.9}".format(epoch + 1, avg_cost.item()))
 
     path = f'tmp/{type(model).__name__}'
     os.makedirs(path, exist_ok=True)
     torch.save(model.state_dict(), os.path.join(path, f'model_{batch_size}_{learning_rate}.pth'))
     print(f'Learning finished with batch size {batch_size} and lr {learning_rate}')
-    return {"train_loss": train_loss, "train_acc": train_acc}
+    return {"train_loss": train_loss, "train_acc": train_acc, "test_loss": test_loss, "test_acc": test_acc}
 
 
 def test(test_dataloader, model, criterion, device):
-    eval_losses = []
-    eval_accu = []
     model.eval()
 
     running_loss = 0
@@ -74,6 +77,4 @@ def test(test_dataloader, model, criterion, device):
     test_loss = running_loss / len(test_dataloader)
     accu = 100. * correct / total
 
-    eval_losses.append(test_loss)
-    eval_accu.append(accu)
-    return {"test_loss": eval_losses, "test_accu": eval_accu}
+    return test_loss, accu
