@@ -2,7 +2,8 @@ import os
 
 import torch
 from torch.autograd import Variable
-from sam import SAM
+
+from utils.sam import SAM
 
 
 def train_sam(train_dataloader, batch_size, model, base_optimizer, criterion, learning_rate, epochs, device):
@@ -10,9 +11,10 @@ def train_sam(train_dataloader, batch_size, model, base_optimizer, criterion, le
     train_acc = []
 
     total_batch = len(train_dataloader.dataset) // batch_size
-    
-    # momentum ist ein Parameter der hier nicht spezifiziert werden sollte sondern anders übergeben werden sollte. Dieser Parameter gehört zu den Parametern des Base_optimizers
-    optimizer = SAM(model.parameters(), base_optimizer, lr = learning_rate, momentum = 0.9)
+
+    # momentum ist ein Parameter der hier nicht spezifiziert werden sollte sondern anders übergeben werden sollte.
+    # Dieser Parameter gehört zu den Parametern des Base_optimizers
+    optimizer = SAM(model.parameters(), base_optimizer, lr=learning_rate, momentum=0.9)
 
     for epoch in range(epochs):
         avg_cost = 0
