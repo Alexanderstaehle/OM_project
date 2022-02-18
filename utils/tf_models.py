@@ -51,22 +51,22 @@ tf.config.run_functions_eagerly(False)
 
 
 class SAMModel(tf.keras.Model):
-    def __init__(self, resnet_model, rho=0.05):
+    def __init__(self, base_model, rho=0.05):
         """
         p, q = 2 for optimal results as suggested in the paper
         (Section 2)
         """
         super(SAMModel, self).__init__()
-        self.resnet_model = resnet_model
+        self.base_model = base_model
         self.rho = rho
 
     def train_step(self, data):
         (images, labels) = data
         e_ws = []
         with tf.GradientTape() as tape:
-            predictions = self.resnet_model(images)
+            predictions = self.base_model(images)
             loss = self.compiled_loss(labels, predictions)
-        trainable_params = self.resnet_model.trainable_variables
+        trainable_params = self.base_model.trainable_variables
         gradients = tape.gradient(loss, trainable_params)
         grad_norm = self._grad_norm(gradients)
         scale = self.rho / (grad_norm + 1e-12)
@@ -77,7 +77,7 @@ class SAMModel(tf.keras.Model):
             e_ws.append(e_w)
 
         with tf.GradientTape() as tape:
-            predictions = self.resnet_model(images)
+            predictions = self.base_model(images)
             loss = self.compiled_loss(labels, predictions)
 
         sam_gradients = tape.gradient(loss, trainable_params)
@@ -92,7 +92,7 @@ class SAMModel(tf.keras.Model):
 
     def test_step(self, data):
         (images, labels) = data
-        predictions = self.resnet_model(images, training=False)
+        predictions = self.base_model(images, training=False)
         loss = self.compiled_loss(labels, predictions)
         self.compiled_metrics.update_state(labels, predictions)
         return {m.name: m.result() for m in self.metrics}
