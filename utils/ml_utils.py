@@ -4,9 +4,10 @@ import torch
 from torch.autograd import Variable
 
 from utils.sam import SAM
+from . import visualization
 
 
-def train_sam(train_dataloader, batch_size, model, base_optimizer, criterion, learning_rate, epochs, device):
+def train_sam(train_dataloader, batch_size, model, base_optimizer, criterion, learning_rate, epochs, device, adaptive = False):
     train_loss = []
     train_acc = []
 
@@ -15,6 +16,7 @@ def train_sam(train_dataloader, batch_size, model, base_optimizer, criterion, le
     # momentum ist ein Parameter der hier nicht spezifiziert werden sollte sondern anders übergeben werden sollte.
     # Dieser Parameter gehört zu den Parametern des Base_optimizers
     optimizer = SAM(model.parameters(), base_optimizer, lr=learning_rate, momentum=0.9)
+
 
     for epoch in range(epochs):
         avg_cost = 0
@@ -131,3 +133,12 @@ def test(test_dataloader, model, criterion, device):
     accu = 100. * correct / total
 
     return test_loss, accu
+
+def save_model(model, name):
+    path = f'tmp/{type(model).__name__}'
+    os.makedirs(path, exist_ok=True)
+    filename = os.path.join(path, name)
+    torch.save(model.state_dict(), name)
+    print(model.state_dict())
+    
+    return filename
