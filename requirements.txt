@@ -1,7 +1,6 @@
-torch~=1.10.2
-torchvision~=0.11.3
-matplotlib~=3.5.1
-seaborn~=0.11.2
-tqdm
-numpy~=1.21.5
-pandas
+matplotlib
+seaborn
+numpy
+tensorflow
+tensorflow_datasets
+scipy

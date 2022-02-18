@@ -1,133 +1,77 @@
-import os
+import pickle
+import time
 
-import torch
-from torch.autograd import Variable
-
-from utils.sam import SAM
-
-
-def train_sam(train_dataloader, batch_size, model, base_optimizer, criterion, learning_rate, epochs, device):
-    train_loss = []
-    train_acc = []
-
-    total_batch = len(train_dataloader.dataset) // batch_size
-
-    # momentum ist ein Parameter der hier nicht spezifiziert werden sollte sondern anders übergeben werden sollte.
-    # Dieser Parameter gehört zu den Parametern des Base_optimizers
-    optimizer = SAM(model.parameters(), base_optimizer, lr=learning_rate, momentum=0.9)
-
-    for epoch in range(epochs):
-        avg_cost = 0
-        epoch_loss = []
-        epoch_acc = []
-
-        for i, batch in enumerate(train_dataloader):
-            batch_X, batch_Y = (b.to(device) for b in batch)
-            X, Y = Variable(batch_X), Variable(batch_Y)
-
-            optimizer.zero_grad()
-
-            hypothesis = model(X)
-            cost = criterion(hypothesis, Y)
-            cost.backward()
-            optimizer.first_step(zero_grad=True)
-
-            hypothesis = model(X)
-            cost = criterion(hypothesis, Y)
-            cost.backward()
-            optimizer.second_step(zero_grad=True)
-
-            prediction = hypothesis.data.max(dim=1)[1]
-            epoch_acc.append(((prediction.data == Y.data).float().mean()).item())
-            epoch_loss.append(cost.item())
-
-            if i % 200 == 0:
-                print("Epoch= {},\t batch = {},\t cost = {:2.4f},\t accuracy = {}".format(epoch + 1, i, epoch_loss[-1],
-                                                                                          epoch_acc[-1]))
-
-            avg_cost += cost.data / total_batch
-        train_loss.append(sum(epoch_loss) / len(epoch_loss))
-        train_acc.append(sum(epoch_acc) / len(epoch_acc))
-        print("[Epoch: {:>4}], averaged cost = {:>.9}".format(epoch + 1, avg_cost.item()))
-
-    path = f'tmp/{type(model).__name__}'
-    os.makedirs(path, exist_ok=True)
-    torch.save(model.state_dict(), os.path.join(path, f'model_{batch_size}_{learning_rate}.pth'))
-    print(f'Learning finished with batch size {batch_size} and lr {learning_rate}')
-    return {"train_loss": train_loss, "train_acc": train_acc}
+import tensorflow as tf
+from tensorflow import keras
 
 
-def train(train_dataloader, test_dataloader, batch_size, model, optimizer, criterion, learning_rate, epochs, device):
-    train_loss = []
-    train_acc = []
-    test_loss = []
-    test_acc = []
+def check_tpu_gpu():
+    try:  # detect TPUs
+        tpu = None
+        tpu = tf.distribute.cluster_resolver.TPUClusterResolver()  # TPU detection
+        tf.config.experimental_connect_to_cluster(tpu)
+        tf.tpu.experimental.initialize_tpu_system(tpu)
+        strategy = tf.distribute.experimental.TPUStrategy(tpu)
+    except ValueError:  # detect GPUs
+        strategy = tf.distribute.MirroredStrategy()  # for GPU or multi-GPU machines
 
-    total_batch = len(train_dataloader.dataset) // batch_size
-
-    for epoch in range(epochs):
-        avg_cost = 0
-        epoch_loss = []
-        epoch_acc = []
-
-        for i, batch in enumerate(train_dataloader):
-            batch_X, batch_Y = (b.to(device) for b in batch)
-            X, Y = Variable(batch_X), Variable(batch_Y)
-
-            optimizer.zero_grad()
-
-            hypothesis = model(X)
-            cost = criterion(hypothesis, Y)
-
-            cost.backward()
-            optimizer.step()
-
-            prediction = hypothesis.data.max(dim=1)[1]
-            epoch_acc.append(((prediction.data == Y.data).float().mean()).item())
-            epoch_loss.append(cost.item())
-
-            if i % 200 == 0:
-                print("Epoch= {},\t batch = {},\t cost = {:2.4f},\t accuracy = {}".format(epoch + 1, i, epoch_loss[-1],
-                                                                                          epoch_acc[-1]))
-
-            avg_cost += cost.data / total_batch
-        train_loss.append(sum(epoch_loss) / len(epoch_loss))
-        train_acc.append(sum(epoch_acc) / len(epoch_acc))
-        test_1, test_2 = test(test_dataloader, model, criterion, device)
-        test_loss.append(test_1)
-        test_acc.append(test_2)
-        print("[Epoch: {:>4}], averaged cost = {:>.9}".format(epoch + 1, avg_cost.item()))
-
-    path = f'tmp/{type(model).__name__}'
-    os.makedirs(path, exist_ok=True)
-    torch.save(model.state_dict(), os.path.join(path, f'model_{batch_size}_{learning_rate}.pth'))
-    print(f'Learning finished with batch size {batch_size} and lr {learning_rate}')
-    return {"train_loss": train_loss, "train_acc": train_acc, "test_loss": test_loss, "test_acc": test_acc}
+    print("Number of accelerators: ", strategy.num_replicas_in_sync)
 
 
-def test(test_dataloader, model, criterion, device):
-    model.eval()
+class ModelState:
+    def __init__(
+            self,
+            weights=None,
+            history=None,
+            times=None,
+    ):
+        self.weights = weights
+        self.history = history
+        self.times = times
 
-    running_loss = 0
-    correct = 0
-    total = 0
 
-    with torch.no_grad():
-        for i, batch in enumerate(test_dataloader):
-            batch_X, batch_Y = (b.to(device) for b in batch)
-            X, Y = Variable(batch_X), Variable(batch_Y)
+class TimeHistory(keras.callbacks.Callback):
+    def on_train_begin(self, logs={}):
+        self.times = []
 
-            outputs = model(X)
+    def on_epoch_begin(self, batch, logs={}):
+        self.epoch_time_start = time.time()
 
-            hypothesis = model(X)
-            cost = criterion(hypothesis, Y)
-            running_loss += cost.item()
+    def on_epoch_end(self, batch, logs={}):
+        self.times.append(time.time() - self.epoch_time_start)
 
-            _, predicted = outputs.max(1)
-            total += Y.size(0)
-            correct += predicted.eq(Y).sum().item()
 
-    test_loss = running_loss / len(test_dataloader)
-    accu = 100. * correct / total
+def train_model(model, train, validation, epochs, extra_callbacks=[], verbose=0):
+    time_callback = TimeHistory()
+    history = model.fit(
+        train,
+        epochs=epochs,
+        validation_data=validation,
+        callbacks=[time_callback] + extra_callbacks,
+        verbose=verbose,
+    )
+    return get_model_state(model, history, time_callback)
 
-    return test_loss, accu
+
+def get_model_state(model, model_history, time_callback):
+    model_state = ModelState()
+    model_state.history = model_history.history
+    model_state.times = time_callback.times
+    model_state.weights = [w.value() for w in model.weights]
+    return model_state
+
+
+def save_model_state(model_state, filename):
+    model_state_serialize = {}
+    for key, state in model_state.items():
+        model_state_serialize[key] = (state.weights, state.history, state.times)
+    pickle.dump(model_state_serialize,
+                open("tmp/{filename}.pickle".format(filename=filename), "wb"))
+
+
+def load_model_state(filename):
+    model_state_serialize = pickle.load(open("tmp/{filename}.pickle".format(filename=filename), "rb"))
+    model_state_by_key = {}
+    for key, state in model_state_serialize.items():
+        model_state_by_key[key] = ModelState(weights=state[0], history=state[1], times=state[2])
+    return model_state_by_key

@@ -1,8 +1,12 @@
+import os
 from functools import reduce
 
 import numpy as np
+import scipy
 import seaborn as sns
+import tensorflow as tf
 from matplotlib import pyplot as plt
+from tensorflow import keras
 
 
 def summarize_diagnostics(history):
@@ -98,7 +102,9 @@ def plot_loss_by_param(model_state_by_type, param_name, filename, ylim_left=None
         plt.legend(loc='best')
 
     plt.show()
-    plt.savefig('graphs/{}'.format(filename))
+    path = 'graphs/{}'.format(filename)
+    os.makedirs(path, exist_ok=True)
+    plt.savefig(path)
 
 
 def plot_generalization_gap_by_param(model_state_by_type, param_name, filename, clipping_val=None, ylim_left=None,
@@ -123,7 +129,9 @@ def plot_generalization_gap_by_param(model_state_by_type, param_name, filename, 
         plt.ylim(ylim_left, ylim_right)
         plt.grid(True)
         plt.legend(loc='best')
-    plt.savefig('graphs/{}'.format(filename))
+    path = 'graphs/{}'.format(filename)
+    os.makedirs(path, exist_ok=True)
+    plt.savefig(path)
 
 
 def visualize_weights(weights_by_key, filename, bins=None):
@@ -143,7 +151,9 @@ def visualize_weights(weights_by_key, filename, bins=None):
         plt.ylabel('Frequency')
         plt.grid(True)
         plt.legend(loc='best')
-    plt.savefig('graphs/{}'.format(filename))
+    path = 'graphs/{}'.format(filename)
+    os.makedirs(path, exist_ok=True)
+    plt.savefig(path)
 
 
 def get_num_elems_from_shape(shape):
@@ -237,9 +247,11 @@ def get_sharpness(model, data, epsilon=1e-2):
     upper_bounds = flattened_weights + delta
 
     # Create copy of model so we don't modify original
-    model.save('pickled_objects/sharpness_model_clone.h5')
-    model_clone = keras.models.load_model('pickled_objects/sharpness_model_clone.h5')
-    os.remove('pickled_objects/sharpness_model_clone.h5')
+    path = 'tmp/sharpness_model_clone.h5'
+    os.makedirs(path, exist_ok=True)
+    model.save(path)
+    model_clone = keras.models.load_model(path)
+    os.remove(path)
 
     # Minimize
     x, f, d = scipy.optimize.fmin_l_bfgs_b(
@@ -293,9 +305,11 @@ def get_random_filter_normalized_direction(weights):
     return random_direction
 
 
-def plot_loss_visualization_1d(base_model, training_data, validation_data, title=None, output_filename=None):
+def plot_loss_visualization_1d(base_model, training_data, validation_data, build_model_function, title=None,
+                               output_filename=None):
     """
     Visualizes the minimizer for a model along a random Gaussian filter-normalized direction.
+    :param build_model_function: function which builds a new non-trained model
     :param base_model: model to evaluate
     :param training_data: training data, used to generate training loss numbers
     :param validation_data: validation data, used to generates validation loss numbers
@@ -311,7 +325,7 @@ def plot_loss_visualization_1d(base_model, training_data, validation_data, title
     x_values = np.linspace(-1, 1, 20)
     train_losses = []
     validation_losses = []
-    new_model = build_model()
+    new_model = build_model_function()
 
     # Compute training and validation loss for each linear combination of weight and direction
     for x in x_values:
@@ -339,12 +353,15 @@ def plot_loss_visualization_1d(base_model, training_data, validation_data, title
         plt.title(title)
     plt.show()
     if output_filename:
-        plt.savefig('graphs/{}'.format(output_filename))
+        path = 'graphs/{}'.format(output_filename)
+        os.makedirs(path, exist_ok=True)
+        plt.savefig(path)
 
     return x_values, train_losses, validation_losses
 
 
-def plot_loss_visualization_2d(base_model, data, mode='all', title=None, output_filename=None, XYZ=None):
+def plot_loss_visualization_2d(base_model, data, build_model_function, mode='all', title=None, output_filename=None,
+                               XYZ=None):
     """
     Visualizes the minimizer for a model along two random Gaussian filter-normalized directions.
     :param base_model: model to evaluate
@@ -373,7 +390,7 @@ def plot_loss_visualization_2d(base_model, data, mode='all', title=None, output_
         y_values = np.linspace(-1, 1, 5)
         X, Y = np.meshgrid(x_values, y_values)
         Z = np.zeros((len(y_values), len(x_values)))
-        new_model = build_model()
+        new_model = build_model_function()
 
         # Compute loss for each linear combination of weight and direction
         for i in range(len(y_values)):
@@ -424,6 +441,8 @@ def plot_loss_visualization_2d(base_model, data, mode='all', title=None, output_
         plt.title(title)
     plt.show()
     if output_filename:
-        plt.savefig('graphs/{}'.format(output_filename))
+        path = 'graphs/{}'.format(output_filename)
+        os.makedirs(path, exist_ok=True)
+        plt.savefig(path)
 
     return X, Y, Z
