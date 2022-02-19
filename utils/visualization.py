@@ -248,7 +248,7 @@ def get_sharpness(model, data, epsilon=1e-2):
 
     # Create copy of model so we don't modify original
     path = 'tmp/sharpness_model_clone.h5'
-    os.makedirs(path, exist_ok=True)
+    #os.makedirs(path, exist_ok=True)
     model.save(path)
     model_clone = keras.models.load_model(path)
     os.remove(path)
