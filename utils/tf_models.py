@@ -51,13 +51,14 @@ tf.config.run_functions_eagerly(False)
 
 
 class SAMModel(tf.keras.Model):
-    def __init__(self, base_model, rho=0.05):
+    def __init__(self, base_model, rho=0.05, adaptive = False):
         """
         p, q = 2 for optimal results as suggested in the paper
         (Section 2)
         """
         super(SAMModel, self).__init__()
         self.base_model = base_model
+        self.adaptive = adaptive
         self.rho = rho
 
     def train_step(self, data):
@@ -68,11 +69,11 @@ class SAMModel(tf.keras.Model):
             loss = self.compiled_loss(labels, predictions)
         trainable_params = self.base_model.trainable_variables
         gradients = tape.gradient(loss, trainable_params)
-        grad_norm = self._grad_norm(gradients)
+        grad_norm = self._grad_norm(trainable_params, gradients)
         scale = self.rho / (grad_norm + 1e-12)
 
         for (grad, param) in zip(gradients, trainable_params):
-            e_w = grad * scale
+            e_w = (tf.math.pow(param, 2.0) if self.adaptive else 1.0) * grad * scale
             param.assign_add(e_w)
             e_ws.append(e_w)
 
@@ -97,10 +98,10 @@ class SAMModel(tf.keras.Model):
         self.compiled_metrics.update_state(labels, predictions)
         return {m.name: m.result() for m in self.metrics}
 
-    def _grad_norm(self, gradients):
+    def _grad_norm(self, params, gradients):
         norm = tf.norm(
             tf.stack([
-                tf.norm(grad) for grad in gradients if grad is not None
+                tf.norm((tf.math.abs(param) if self.adaptive else 1.0) * grad) for param, grad in zip(params, gradients) if grad is not None
             ])
         )
         return norm
