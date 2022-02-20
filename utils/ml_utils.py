@@ -66,12 +66,18 @@ def save_model_state(model_state, filename):
     for key, state in model_state.items():
         model_state_serialize[key] = (state.weights, state.history, state.times)
     pickle.dump(model_state_serialize,
-                open("tmp/{filename}.pickle".format(filename=filename), "wb"))
+                open(path_from_filename(filename), "wb"))
 
 
 def load_model_state(filename):
-    model_state_serialize = pickle.load(open("tmp/{filename}.pickle".format(filename=filename), "rb"))
+    model_state_serialize = pickle.load(open(path_from_filename(filename), "rb"))
     model_state_by_key = {}
     for key, state in model_state_serialize.items():
         model_state_by_key[key] = ModelState(weights=state[0], history=state[1], times=state[2])
     return model_state_by_key
+
+def path_from_filename(filename, format_ = "pickle"):
+    return f"tmp/{filename}.{format_}"
+
+def load_model_from_filename(filename, format_ = "pickle"):
+    return keras.models.load_model(path_from_filename(filename, format_))
