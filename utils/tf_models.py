@@ -16,6 +16,14 @@ def build_simple_cnn(x_train, dropout_prob=0.5):
     model.add(layers.Dense(10, use_bias=True, activation='softmax'))
     return model
 
+def build_simple_cnn_sam(x_train, optimizer, dropout_prob=0.5, adaptive=False, rho=0.05): 
+    base_model = build_simple_cnn(x_train, dropout_prob)
+    base_model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+    model = SAMModel(base_model, adaptive=adaptive, rho=rho)
+    model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+
+    return model
+
 
 def build_simple_dense_model(x_train):
     model = keras.models.Sequential([
