@@ -16,6 +16,14 @@ def build_simple_cnn(x_train, dropout_prob=0.5):
     model.add(layers.Dense(10, use_bias=True, activation='softmax'))
     return model
 
+def build_simple_cnn_sam(x_train, optimizer, dropout_prob=0.5, adaptive=False, rho=0.05): 
+    base_model = build_simple_cnn(x_train, dropout_prob)
+    base_model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+    model = SAMModel(base_model, adaptive=adaptive, rho=rho)
+    model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+
+    return model
+
 
 def build_simple_dense_model(x_train):
     model = keras.models.Sequential([
@@ -51,33 +59,34 @@ tf.config.run_functions_eagerly(False)
 
 
 class SAMModel(tf.keras.Model):
-    def __init__(self, resnet_model, rho=0.05):
+    def __init__(self, base_model, rho=0.05, adaptive = False):
         """
         p, q = 2 for optimal results as suggested in the paper
         (Section 2)
         """
         super(SAMModel, self).__init__()
-        self.resnet_model = resnet_model
+        self.base_model = base_model
+        self.adaptive = adaptive
         self.rho = rho
 
     def train_step(self, data):
         (images, labels) = data
         e_ws = []
         with tf.GradientTape() as tape:
-            predictions = self.resnet_model(images)
+            predictions = self.base_model(images)
             loss = self.compiled_loss(labels, predictions)
-        trainable_params = self.resnet_model.trainable_variables
+        trainable_params = self.base_model.trainable_variables
         gradients = tape.gradient(loss, trainable_params)
-        grad_norm = self._grad_norm(gradients)
+        grad_norm = self._grad_norm(trainable_params, gradients)
         scale = self.rho / (grad_norm + 1e-12)
 
         for (grad, param) in zip(gradients, trainable_params):
-            e_w = grad * scale
+            e_w = (tf.math.pow(param, 2.0) if self.adaptive else 1.0) * grad * scale
             param.assign_add(e_w)
             e_ws.append(e_w)
 
         with tf.GradientTape() as tape:
-            predictions = self.resnet_model(images)
+            predictions = self.base_model(images)
             loss = self.compiled_loss(labels, predictions)
 
         sam_gradients = tape.gradient(loss, trainable_params)
@@ -92,15 +101,15 @@ class SAMModel(tf.keras.Model):
 
     def test_step(self, data):
         (images, labels) = data
-        predictions = self.resnet_model(images, training=False)
+        predictions = self.base_model(images, training=False)
         loss = self.compiled_loss(labels, predictions)
         self.compiled_metrics.update_state(labels, predictions)
         return {m.name: m.result() for m in self.metrics}
 
-    def _grad_norm(self, gradients):
+    def _grad_norm(self, params, gradients):
         norm = tf.norm(
             tf.stack([
-                tf.norm(grad) for grad in gradients if grad is not None
+                tf.norm((tf.math.abs(param) if self.adaptive else 1.0) * grad) for param, grad in zip(params, gradients) if grad is not None
             ])
         )
         return norm

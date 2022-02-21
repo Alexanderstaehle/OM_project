@@ -214,9 +214,10 @@ def get_negative_loss_gradient(flattened_weights, *args):
 
     batch_gradients = []
     for x, y in data:
+        
         with tf.GradientTape() as tape:
             preds = model(x)
-            negative_loss = tf.math.negative(tf.math.reduce_mean(tf.keras.losses.binary_crossentropy(y, preds)))
+            negative_loss = tf.math.negative(tf.math.reduce_mean(tf.keras.losses.sparse_categorical_crossentropy(y,  preds)))
 
         gradients = [tf.cast(g, tf.float64).numpy() for g in tape.gradient(negative_loss, model.trainable_variables)]
         flattened_gradients = np.concatenate([g.flatten() for g in gradients])
@@ -248,7 +249,7 @@ def get_sharpness(model, data, epsilon=1e-2):
 
     # Create copy of model so we don't modify original
     path = 'tmp/sharpness_model_clone.h5'
-    os.makedirs(path, exist_ok=True)
+    #os.makedirs(path, exist_ok=True)
     model.save(path)
     model_clone = keras.models.load_model(path)
     os.remove(path)
