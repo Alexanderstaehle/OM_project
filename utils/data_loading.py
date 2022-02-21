@@ -23,9 +23,9 @@ def load_dataset(dataset_name, shuffle_seed):
     :return: (raw_train, raw_validation), label_metadata
     """
     read_config = tfds.ReadConfig(shuffle_seed=shuffle_seed)
-    (raw_train, raw_validation), metadata = tfds.load(
+    (raw_test, raw_validation, raw_train), metadata = tfds.load(
         dataset_name,
-        split=['train[:80%]', 'train[80%:]'],
+        split=["train[:10%]", "train[10%:25%]", "train[25%:]"],
         shuffle_files=True,
         with_info=True,
         as_supervised=True,
@@ -35,7 +35,7 @@ def load_dataset(dataset_name, shuffle_seed):
     # summarize_dataset(raw_train)
     # print('\nValidation Data Summary')
     # summarize_dataset(raw_validation)
-    return (raw_train, raw_validation), metadata.features['label'].names
+    return (raw_test, raw_validation, raw_train), metadata.features['label'].names
 
 
 def summarize_dataset(tf_data):
@@ -106,16 +106,18 @@ def load_batched_and_resized_dataset(
     :return: train_batches, validation_batches
     """
     # Load dataset
-    (raw_train, raw_validation), label_names = load_dataset(dataset_name, shuffle_seed=shuffle_seed)
+    (raw_test, raw_validation, raw_train), label_names = load_dataset(dataset_name, shuffle_seed=shuffle_seed)
 
     # Resize images and normalize (divide by 255) if specified
     resize = lambda img, lbl: resize_image(img, lbl, img_size, normalize_pixel_values)
     train = raw_train.map(resize)
     validation = raw_validation.map(resize)
+    test = raw_test.map(resize)
 
     # Cache data in memory
     train = train.cache()
     validation = validation.cache()
+    test = test.cache()
 
     # Divide data into batches
     train_batches = train.shuffle(
@@ -124,5 +126,6 @@ def load_batched_and_resized_dataset(
         reshuffle_each_iteration=False,
     ).batch(batch_size)
     validation_batches = validation.batch(batch_size)
+    test_batches = test.batch(batch_size)
 
-    return train_batches, validation_batches
+    return train_batches, validation_batches, test_batches
