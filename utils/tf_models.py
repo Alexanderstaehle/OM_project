@@ -6,7 +6,8 @@ from tensorflow import keras
 def build_simple_cnn(x_train, dropout_prob=0.5):
     model = keras.models.Sequential()
     model.add(
-        layers.Conv2D(input_shape=x_train.element_spec[0].shape[1:], filters=32, kernel_size=3, strides=1, padding='same', activation='relu'))
+        layers.Conv2D(input_shape=x_train.element_spec[0].shape[1:], filters=32, kernel_size=3, strides=1,
+                      padding='same', activation='relu'))
     model.add(layers.MaxPooling2D((2, 2)))
     model.add(layers.Dropout(rate=dropout_prob))
     model.add(layers.Conv2D(64, kernel_size=3, strides=1, padding='same', activation='relu'))
@@ -16,13 +17,15 @@ def build_simple_cnn(x_train, dropout_prob=0.5):
     model.add(layers.Dense(10, use_bias=True, activation='softmax'))
     return model
 
+
 def build_and_compile_simple_cnn(x_train, optimizer, dropout_prob=0.5):
     model = build_simple_cnn(x_train, dropout_prob)
     model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-    
+
     return model
 
-def build_simple_cnn_sam(x_train, optimizer, dropout_prob=0.5, adaptive=False, rho=0.05): 
+
+def build_simple_cnn_sam(x_train, optimizer, dropout_prob=0.5, adaptive=False, rho=0.05):
     base_model = build_simple_cnn(x_train, dropout_prob)
     base_model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
     model = SAMModel(base_model, adaptive=adaptive, rho=rho)
@@ -65,7 +68,7 @@ tf.config.run_functions_eagerly(False)
 
 
 class SAMModel(tf.keras.Model):
-    def __init__(self, base_model, rho=0.05, adaptive = False):
+    def __init__(self, base_model, rho=0.05, adaptive=False):
         """
         p, q = 2 for optimal results as suggested in the paper
         (Section 2)
@@ -115,7 +118,8 @@ class SAMModel(tf.keras.Model):
     def _grad_norm(self, params, gradients):
         norm = tf.norm(
             tf.stack([
-                tf.norm((tf.math.abs(param) if self.adaptive else 1.0) * grad) for param, grad in zip(params, gradients) if grad is not None
+                tf.norm((tf.math.abs(param) if self.adaptive else 1.0) * grad) for param, grad in zip(params, gradients)
+                if grad is not None
             ])
         )
         return norm

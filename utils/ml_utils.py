@@ -1,6 +1,6 @@
+import os
 import pickle
 import time
-import os
 
 import tensorflow as tf
 from tensorflow import keras
@@ -77,22 +77,27 @@ def load_model_state(filename):
         model_state_by_key[key] = ModelState(weights=state[0], history=state[1], times=state[2])
     return model_state_by_key
 
-def path_from_filename(filename, format_ = "pickle"):
+
+def path_from_filename(filename, format_="pickle"):
     return f"tmp/{filename}.{format_}"
 
-def load_model_from_filename(filename, format_ = "pickle"):
+
+def load_model_from_filename(filename, format_="pickle"):
     return keras.models.load_model(path_from_filename(filename, format_))
 
-def save_sharpnesses_dict(sharpnesses, filename = "sharpnesses"):
+
+def save_sharpnesses_dict(sharpnesses, filename="sharpnesses"):
     with open(path_from_filename(filename), 'wb') as file:
         pickle.dump(sharpnesses, file)
-    
-def load_sharpnesses_dict(filename = "sharpnesses"):
+
+
+def load_sharpnesses_dict(filename="sharpnesses"):
     with open(path_from_filename(filename), 'rb') as file:
         sharpnesses = pickle.load(file)
     return sharpnesses
 
-def init_sharpnesses_dict(filename = "sharpnesses"):
+
+def init_sharpnesses_dict(filename="sharpnesses"):
     if os.path.isfile(path_from_filename(filename)):
         return load_sharpnesses_dict()
     else:
