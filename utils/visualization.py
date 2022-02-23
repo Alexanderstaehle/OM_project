@@ -214,10 +214,10 @@ def get_negative_loss_gradient(flattened_weights, *args):
 
     batch_gradients = []
     for x, y in data:
-        
         with tf.GradientTape() as tape:
             preds = model(x)
-            negative_loss = tf.math.negative(tf.math.reduce_mean(tf.keras.losses.sparse_categorical_crossentropy(y,  preds)))
+            negative_loss = tf.math.negative(
+                tf.math.reduce_mean(tf.keras.losses.sparse_categorical_crossentropy(y, preds)))
 
         gradients = [tf.cast(g, tf.float64).numpy() for g in tape.gradient(negative_loss, model.trainable_variables)]
         flattened_gradients = np.concatenate([g.flatten() for g in gradients])
@@ -249,7 +249,7 @@ def get_sharpness(model, data, epsilon=1e-2):
 
     # Create copy of model so we don't modify original
     path = 'tmp/sharpness_model_clone.h5'
-    #os.makedirs(path, exist_ok=True)
+    # os.makedirs(path, exist_ok=True)
     model.save(path)
     model_clone = keras.models.load_model(path)
     os.remove(path)
@@ -448,7 +448,8 @@ def plot_loss_visualization_2d(base_model, data, build_model_function, mode='all
 
     return X, Y, Z
 
-def plot_mean_time_per_epoch(batch_sizes, mean_times, ylim = (0, 14)):
+
+def plot_mean_time_per_epoch(batch_sizes, mean_times, ylim=(0, 14)):
     rects = plt.bar(x=range(len(batch_sizes)), height=mean_times, tick_label=batch_sizes)
     plt.xlabel('Batch size')
     plt.ylabel('Average time per epoch (s)')
@@ -456,8 +457,9 @@ def plot_mean_time_per_epoch(batch_sizes, mean_times, ylim = (0, 14)):
     plt.title('Mean training time per epoch by batch size')
     plt.show()
     plt.savefig('graphs/mean_epoch_training_time_by_batch_size')
-    
-def histogram_num_of_train_epochs_until_conv(batch_sizes, convergence_epochs, ylim = (0,20)):
+
+
+def histogram_num_of_train_epochs_until_conv(batch_sizes, convergence_epochs, ylim=(0, 20)):
     rects = plt.bar(x=range(len(batch_sizes)), height=convergence_epochs, tick_label=batch_sizes)
     plt.xlabel('Batch size')
     plt.ylabel('Number of training epochs')
@@ -465,8 +467,9 @@ def histogram_num_of_train_epochs_until_conv(batch_sizes, convergence_epochs, yl
     plt.title('Number of training epochs until convergence')
     plt.show()
     plt.savefig('graphs/num_training_epochs_by_batch_size')
-    
-def histogram_overall_time_until_end_of_epochs(batch_sizes, overall_training_times, ylim = (0, 100)):
+
+
+def histogram_overall_time_until_end_of_epochs(batch_sizes, overall_training_times, ylim=(0, 100)):
     rects = plt.bar(x=range(len(batch_sizes)), height=overall_training_times, tick_label=batch_sizes)
     plt.xlabel('Batch size')
     plt.ylabel('Overall training time (in seconds)')
@@ -474,7 +477,8 @@ def histogram_overall_time_until_end_of_epochs(batch_sizes, overall_training_tim
     plt.title('Overall training time until end of epochs, by batch size')
     plt.show()
     plt.savefig('graphs/overall_training_time_by_batch_size')
-    
+
+
 def histogram_sharpness(batch_sizes, sharpnesses):
     rects = plt.bar(x=range(len(batch_sizes)), height=sharpnesses, tick_label=batch_sizes)
     # autolabel(rects)
@@ -484,7 +488,8 @@ def histogram_sharpness(batch_sizes, sharpnesses):
     plt.title('Sharpness score by batch size')
     plt.show()
     plt.savefig('graphs/sharpness_by_batch_size')
-    
+
+
 def extract_times_for_batch_sizes(models_states, batch_sizes, key_tupel):
     mean_times = []
     convergence_epochs = []
@@ -496,17 +501,25 @@ def extract_times_for_batch_sizes(models_states, batch_sizes, key_tupel):
         mean_time_per_epoch = np.mean(state.times)
         convergence_epoch = np.argmin(state.history['val_loss'])
         overall_training_time = np.sum(state.times[:convergence_epoch])
-    
+
         # Append results
         convergence_epochs.append(convergence_epoch)
         mean_times.append(mean_time_per_epoch)
         overall_training_times.append(overall_training_time)
-    
+
         print("Batch size: ", batch_size)
         print("\tMean time per epoch: ", mean_time_per_epoch)
         print("\tConverged in {} epochs".format(convergence_epoch))
         print("\tOverall training time (in seconds) until convergence: ", overall_training_time)
-        
+
     return mean_times, convergence_epoch, overall_training_times
-    
-     
+
+
+def plot_sharpness(batch_sizes, sharpnesses):
+    plt.bar(x=range(len(batch_sizes)), height=[*sharpnesses.values()], tick_label=batch_sizes)
+    plt.ylim(0, 105)
+    plt.xlabel('Batch size')
+    plt.ylabel('Sharpness')
+    plt.title('Sharpness score by batch size')
+    plt.show()
+    plt.savefig('graphs/sharpness_by_batch_size')
