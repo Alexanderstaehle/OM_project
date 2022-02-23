@@ -1,5 +1,6 @@
 import pickle
 import time
+import os
 
 import tensorflow as tf
 from tensorflow import keras
@@ -90,3 +91,9 @@ def load_sharpnesses_dict(filename = "sharpnesses"):
     with open(path_from_filename(filename), 'rb') as file:
         sharpnesses = pickle.load(file)
     return sharpnesses
+
+def init_sharpnesses_dict(filename = "sharpnesses"):
+    if os.path.isfile(path_from_filename(filename)):
+        return load_sharpnesses_dict()
+    else:
+        return {}
