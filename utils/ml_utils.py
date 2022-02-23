@@ -81,3 +81,12 @@ def path_from_filename(filename, format_ = "pickle"):
 
 def load_model_from_filename(filename, format_ = "pickle"):
     return keras.models.load_model(path_from_filename(filename, format_))
+
+def save_sharpnesses_dict(sharpnesses, filename = "sharpnesses"):
+    with open(path_from_filename(filename), 'wb') as file:
+        pickle.dump(sharpnesses, file)
+    
+def load_sharpnesses_dict(filename = "sharpnesses"):
+    with open(path_from_filename(filename), 'rb') as file:
+        sharpnesses = pickle.load(file)
+    return sharpnesses
