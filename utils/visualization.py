@@ -67,8 +67,10 @@ def plot_accuracies_by_param(model_state_by_type, param_name, filename, ylim_lef
         plt.grid(True)
         plt.legend(loc='best')
 
+    path = 'graphs/'
+    os.makedirs(path, exist_ok=True)
+    plt.savefig(path + '{}.png'.format(filename), format="png")
     plt.show()
-    plt.savefig('graphs/{}'.format(filename))
 
 
 def plot_loss_by_param(model_state_by_type, param_name, filename, ylim_left=None, ylim_right=None):
@@ -101,10 +103,10 @@ def plot_loss_by_param(model_state_by_type, param_name, filename, ylim_left=None
         plt.grid(True)
         plt.legend(loc='best')
 
-    plt.show()
-    path = 'graphs/{}'.format(filename)
+    path = 'graphs/'
     os.makedirs(path, exist_ok=True)
-    plt.savefig(path)
+    plt.savefig(path + '{}.png'.format(filename), format="png")
+    plt.show()
 
 
 def plot_generalization_gap_by_param(model_state_by_type, param_name, filename, clipping_val=None, ylim_left=None,
@@ -129,9 +131,10 @@ def plot_generalization_gap_by_param(model_state_by_type, param_name, filename, 
         plt.ylim(ylim_left, ylim_right)
         plt.grid(True)
         plt.legend(loc='best')
-    path = 'graphs/{}'.format(filename)
+    path = 'graphs/'
     os.makedirs(path, exist_ok=True)
-    plt.savefig(path)
+    plt.savefig(path + '{}.png'.format(filename), format="png")
+    plt.show()
 
 
 def visualize_weights(weights_by_key, filename, bins=None):
@@ -151,9 +154,10 @@ def visualize_weights(weights_by_key, filename, bins=None):
         plt.ylabel('Frequency')
         plt.grid(True)
         plt.legend(loc='best')
-    path = 'graphs/{}'.format(filename)
+    path = 'graphs/'
     os.makedirs(path, exist_ok=True)
-    plt.savefig(path)
+    plt.savefig(path + '{}.png'.format(filename), format="png")
+    plt.show()
 
 
 def get_num_elems_from_shape(shape):
