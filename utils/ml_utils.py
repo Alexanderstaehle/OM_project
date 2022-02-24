@@ -91,14 +91,32 @@ def save_sharpnesses_dict(sharpnesses, filename="sharpnesses"):
         pickle.dump(sharpnesses, file)
 
 
+def save_initial_weights_dict(init_weights, filename="initial_weights"):
+    with open(path_from_filename(filename), 'wb') as file:
+        pickle.dump(init_weights, file)
+
+
 def load_sharpnesses_dict(filename="sharpnesses"):
     with open(path_from_filename(filename), 'rb') as file:
         sharpnesses = pickle.load(file)
     return sharpnesses
 
 
+def load_initial_weights_dict(filename="initial_weights"):
+    with open(path_from_filename(filename), 'rb') as file:
+        intial_weights = pickle.load(file)
+    return intial_weights
+
+
 def init_sharpnesses_dict(filename="sharpnesses"):
     if os.path.isfile(path_from_filename(filename)):
         return load_sharpnesses_dict()
+    else:
+        return {}
+
+
+def init_initial_weights_dict(filename = "initial_weights"):
+    if os.path.isfile(path_from_filename(filename)):
+        return load_initial_weights_dict()
     else:
         return {}
