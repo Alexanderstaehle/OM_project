@@ -358,9 +358,10 @@ def plot_loss_visualization_1d(base_model, training_data, validation_data, build
         plt.title(title)
     plt.show()
     if output_filename:
-        path = 'graphs/{}'.format(output_filename)
+        path = 'graphs/'
         os.makedirs(path, exist_ok=True)
-        plt.savefig(path)
+        plt.savefig(path + '{}.png'.format(output_filename), format="png")
+        plt.show()
 
     return x_values, train_losses, validation_losses
 
@@ -446,9 +447,10 @@ def plot_loss_visualization_2d(base_model, data, build_model_function, mode='all
         plt.title(title)
     plt.show()
     if output_filename:
-        path = 'graphs/{}'.format(output_filename)
+        path = 'graphs/'
         os.makedirs(path, exist_ok=True)
-        plt.savefig(path)
+        plt.savefig(path + '{}.png'.format(output_filename), format="png")
+        plt.show()
 
     return X, Y, Z
 
@@ -459,8 +461,8 @@ def plot_mean_time_per_epoch(batch_sizes, mean_times, ylim=(0, 14)):
     plt.ylabel('Average time per epoch (s)')
     plt.ylim(ylim)
     plt.title('Mean training time per epoch by batch size')
-    plt.show()
     plt.savefig('graphs/mean_epoch_training_time_by_batch_size')
+    plt.show()
 
 
 def histogram_num_of_train_epochs_until_conv(batch_sizes, convergence_epochs, ylim=(0, 20)):
@@ -469,8 +471,8 @@ def histogram_num_of_train_epochs_until_conv(batch_sizes, convergence_epochs, yl
     plt.ylabel('Number of training epochs')
     plt.ylim(ylim)
     plt.title('Number of training epochs until convergence')
-    plt.show()
     plt.savefig('graphs/num_training_epochs_by_batch_size')
+    plt.show()
 
 
 def histogram_overall_time_until_end_of_epochs(batch_sizes, overall_training_times, ylim=(0, 100)):
@@ -479,8 +481,8 @@ def histogram_overall_time_until_end_of_epochs(batch_sizes, overall_training_tim
     plt.ylabel('Overall training time (in seconds)')
     plt.ylim(ylim)
     plt.title('Overall training time until end of epochs, by batch size')
-    plt.show()
     plt.savefig('graphs/overall_training_time_by_batch_size')
+    plt.show()
 
 
 def histogram_sharpness(batch_sizes, sharpnesses):
@@ -490,8 +492,8 @@ def histogram_sharpness(batch_sizes, sharpnesses):
     plt.xlabel('Batch size')
     plt.ylabel('Sharpness')
     plt.title('Sharpness score by batch size')
-    plt.show()
     plt.savefig('graphs/sharpness_by_batch_size')
+    plt.show()
 
 
 def extract_times_for_batch_sizes(models_states, batch_sizes, key_tupel):
@@ -525,5 +527,5 @@ def plot_sharpness(batch_sizes, sharpnesses):
     plt.xlabel('Batch size')
     plt.ylabel('Sharpness')
     plt.title('Sharpness score by batch size')
-    plt.show()
     plt.savefig('graphs/sharpness_by_batch_size')
+    plt.show()
