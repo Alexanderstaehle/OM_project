@@ -455,7 +455,7 @@ def plot_loss_visualization_2d(base_model, data, build_model_function, mode='all
     return X, Y, Z
 
 
-def plot_mean_time_per_epoch(batch_sizes, mean_times, ylim=(0, 14)):
+def plot_mean_time_per_epoch(batch_sizes, mean_times, ylim=(0, 20)):    
     rects = plt.bar(x=range(len(batch_sizes)), height=mean_times, tick_label=batch_sizes)
     plt.xlabel('Batch size')
     plt.ylabel('Average time per epoch (s)')
@@ -465,7 +465,7 @@ def plot_mean_time_per_epoch(batch_sizes, mean_times, ylim=(0, 14)):
     plt.show()
 
 
-def histogram_num_of_train_epochs_until_conv(batch_sizes, convergence_epochs, ylim=(0, 20)):
+def histogram_num_of_train_epochs_until_conv(batch_sizes, convergence_epochs, ylim=(0, 1000)):
     rects = plt.bar(x=range(len(batch_sizes)), height=convergence_epochs, tick_label=batch_sizes)
     plt.xlabel('Batch size')
     plt.ylabel('Number of training epochs')
@@ -475,7 +475,7 @@ def histogram_num_of_train_epochs_until_conv(batch_sizes, convergence_epochs, yl
     plt.show()
 
 
-def histogram_overall_time_until_end_of_epochs(batch_sizes, overall_training_times, ylim=(0, 100)):
+def histogram_overall_time_until_end_of_epochs(batch_sizes, overall_training_times, ylim=(0, 2000)):
     rects = plt.bar(x=range(len(batch_sizes)), height=overall_training_times, tick_label=batch_sizes)
     plt.xlabel('Batch size')
     plt.ylabel('Overall training time (in seconds)')
@@ -518,14 +518,50 @@ def extract_times_for_batch_sizes(models_states, batch_sizes, key_tupel):
         print("\tConverged in {} epochs".format(convergence_epoch))
         print("\tOverall training time (in seconds) until convergence: ", overall_training_time)
 
-    return mean_times, convergence_epoch, overall_training_times
+    return mean_times, convergence_epochs, overall_training_times
 
 
-def plot_sharpness(batch_sizes, sharpnesses):
-    plt.bar(x=range(len(batch_sizes)), height=[*sharpnesses.values()], tick_label=batch_sizes)
-    plt.ylim(0, 105)
+def plot_sharpness(batch_sizes, sharpnesses, key):
+    sharpness_values = [sharpnesses[key + (batch_size,)] for batch_size in batch_sizes]
+    ylim = (0, max(sharpness_values))
+    
+    plt.bar(x=range(len(batch_sizes)), height=sharpness_values, tick_label=batch_sizes)
+    plt.ylim(ylim)
     plt.xlabel('Batch size')
     plt.ylabel('Sharpness')
     plt.title('Sharpness score by batch size')
     plt.savefig('graphs/sharpness_by_batch_size')
     plt.show()
+
+
+def plot_distance_from_initial_weight(models, initial_weights, batch_sizes, key, ylim=(0, 14)):
+    distances = []
+    for batch_size in batch_sizes:
+        flattened_initial_weights = np.concatenate([w.flatten() for w in initial_weights[key + (batch_size,)]])
+        model = models[key + (batch_size,)]
+        flattened_weights = np.concatenate([w.flatten() for w in model.get_weights()])
+        distance = np.linalg.norm(flattened_weights - flattened_initial_weights)
+        distances.append(distance)
+        print("Batch size: {}, distance: {}".format(batch_size, distance))
+    
+    # Plot distances
+    plt.bar(x=range(len(batch_sizes)), height=distances, tick_label=batch_sizes)
+    plt.xlabel('Batch size')
+    plt.ylim()
+    plt.ylabel('Distance from initial weights')
+    plt.title('Distance from initial weights by batch size')
+    plt.show()
+    plt.savefig('graphs/distance_from_initial_weights_by_batch_size')
+    
+def plot_sharpness_times_runtime(batch_sizes, overall_training_times, sharpnesses, key):
+    sharpness_values = np.array([sharpnesses[key + (batch_size,)] for batch_size in batch_sizes])
+    
+    plt.bar(x=range(len(batch_sizes)), height=sharpness_values*np.array(overall_training_times), tick_label=batch_sizes)
+    # plt.ylim(ylim)
+    plt.xlabel('Batch size')
+    plt.ylabel('Sharpness times runtime')
+    plt.title('Sharpness score times runtime by batch size')
+    plt.savefig('graphs/sharpness_times_runtime_by_batch_size')
+    plt.show()
+
+    
