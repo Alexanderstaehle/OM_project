@@ -115,7 +115,7 @@ def init_sharpnesses_dict(filename="sharpnesses"):
         return {}
 
 
-def init_initial_weights_dict(filename = "initial_weights"):
+def init_initial_weights_dict(filename="initial_weights"):
     if os.path.isfile(path_from_filename(filename)):
         return load_initial_weights_dict()
     else:
