@@ -547,15 +547,27 @@ def plot_sharpness(batch_sizes, sharpnesses, key, learning_rates=None):
     plt.show()
 
 
-def plot_distance_from_initial_weight(models, initial_weights, batch_sizes, key, ylim=(0, 14)):
+def plot_distance_from_initial_weight(models, initial_weights, batch_sizes, key, learning_rates = None, ylim=(0, 14)):
     distances = []
-    for batch_size in batch_sizes:
-        flattened_initial_weights = np.concatenate([w.flatten() for w in initial_weights[key + (batch_size,)]])
-        model = models[key + (batch_size,)]
-        flattened_weights = np.concatenate([w.flatten() for w in model.get_weights()])
-        distance = np.linalg.norm(flattened_weights - flattened_initial_weights)
-        distances.append(distance)
-        print("Batch size: {}, distance: {}".format(batch_size, distance))
+    if learning_rates is None:
+        for batch_size in batch_sizes:
+            flattened_initial_weights = np.concatenate([w.flatten() for w in initial_weights[key + (batch_size,)]])
+            model = models[key + (batch_size,)]
+            flattened_weights = np.concatenate([w.flatten() for w in model.get_weights()])
+            distance = np.linalg.norm(flattened_weights - flattened_initial_weights)
+            distances.append(distance)
+            print("Batch size: {}, distance: {}".format(batch_size, distance))
+
+    else:
+        for batch_size, lr in zip(batch_sizes, learning_rates):
+            flattened_initial_weights = np.concatenate([w.flatten() for w in initial_weights[key + (batch_size, lr)]])
+            model = models[key + (batch_size, lr)]
+            flattened_weights = np.concatenate([w.flatten() for w in model.get_weights()])
+            distance = np.linalg.norm(flattened_weights - flattened_initial_weights)
+            distances.append(distance)
+            print("Batch size: {}, distance: {}".format(batch_size, distance))
+
+        
 
     # Plot distances
     plt.bar(x=range(len(batch_sizes)), height=distances, tick_label=batch_sizes)
