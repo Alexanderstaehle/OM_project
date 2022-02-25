@@ -1,1 +1,5 @@
 utils/__pycache__/
+latex-example-paper/*
+!latex-example-paper/latex-template.tex
+!latex-example-paper/latex-template.pdf
+!latex-example-paper/literature.bib

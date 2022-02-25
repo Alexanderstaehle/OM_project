@@ -7,71 +7,46 @@
 \usepackage{amssymb}
 
 \begin{document}
-\title{Writing Scientific Papers and Software}
+\title{Large batch sizes for Deep Learning}
 
 \author{
-  Cheng Soon Ong\\
-  \textit{Department of Computer Science, ETH Zurich, Switzerland}
+  Mario Rene Surlemont\\
+  \textit{University Vienna}\and Elnaz Javadi Farahzadi\\
+  \textit{University Vienna}\and Alexander Stähle\\
+  \textit{University Vienna}
 }
 
 \maketitle
 
 \begin{abstract}
-\section*{English}
-A critical decision when using SGD variants is the size of the batch. In the past, it has been shown that a generalization gap occurs when using large batch sizes. This can be compensated (conditionally) by a larger learning rate, but the minima found usually remain sharper than with smaller batch sizes. Within this project we evaluate whether a formulation that regulates the sharpness of minimizers is suitable to compensate for the problems of large batch sizes. 
-\section*{Deutsch}
-  Eine kritische Entscheidung bei der Verwendung von SGD Varianten ist die größe der Batch size. In der Vergangenheit hat sich gezeigt, dass bei der Verwendung großer Batch sizes eine Generalisierungslücke entsteht. Diese lässt sich (bedingt) durch eine größere Learning rate ausgleichen, allerdings bleiben die gefundenen Minima meist schärfer als bei kleineren Batch Sizes. Innerhalb dieses Projektes wird evaluiert, ob sich eine Formulierung, die die sharpness von Minimizern reguliert, eignet, um die Probleme großer Batch sizes auszugleichen. 
+A critical decision when using SGD variants is choosing the size of a batch. In the past, it has been shown that a generalization gap occurs when using large batch sizes rather than small batch sizes. This can be compensated (conditionally) by a larger learning rate, but the minima found usually remain sharper than with smaller batch sizes. Within this project we evaluate whether a formulation that regulates the sharpness of minimizers is suitable to compensate for the problems of large batch sizes. We do this by assessing the results of an empirical study of a heterogeneous set of optimizers and loss functions in relation to different batch sizes. 
 \end{abstract}
 
 \section{Introduction}
 \section*{English}
-Deep Learning has become a popular standard approach to solve (among others) classification problems. 
-The (non-convex) optimization problem to be solved (in Deep Learning) is of the form 
-\section*{Deutsch}
-Deep Learning ist zu einem populären Standardansatz geworden um (unter anderem) Klassifizierungsprobleme zu lösen. 
-Das dabei (bei Deep Learning) zu lösende (nicht-konvexe) Optimierungsproblem ist von der Form 
+Deep Learning has become a popular approach to solve (among others) classification problems. 
+The non-convex optimization problem to be solved in Deep Learning applications is typically of the form 
 \begin{equation}
 \min_{w \in \mathbb{R}^d}{f(w) := \frac{1}{M} \sum_{i = 1}^M{f_i(w)}},1
 \end{equation}
-\section*{English}
-where $f_i$ is the loss function that calculates the loss for data point $i \in \{1, 2, ..., M\}$, where $M$ is the number of data points and $w$ is the weight vector. 
-Mostly one uses for the minimization of such Stochastic Gradient Descent (SGD) variants. Here $f$ is minimized by iteratively taking steps of the form
-\section*{Deutsch}
-wobei $f_i$ die Lossfunktion ist, die den Verlust für Datenpunkt $i \in \{1, 2, ..., M\}$ berechnet. $M$ ist dabei die Anzahl der Datenpunkte und $w$ der Gewichtsvektor. 
-Meistens verwendet man zur Minimierung solcher Stochastic Gradient Descent (SGD) Varianten. Hierbei wird $f$ minimiert, indem man iterativ Schritte der Form
+where $f_i$ is the loss function that calculates the loss for data point $i \in \{1, 2, ..., M\}$, $M$ is the number of data points and $w$ is the weight vector. 
+For minimizing such functions one often uses Stochastic Gradient Descent (SGD) and its variants. $f$ is minimized by iteratively taking steps of the form
 \begin{equation}
 x_{k+1} = x_k - \alpha_k \biggl(\frac{1}{|B_k|} \sum_{i = 1}^{|B_k|}{\nabla f_i(w_k) \biggl)}.
 \end{equation}
-\section*{English}
-Here $B_k \subset \{1,2,..., M\}$ is a randomly selected batch of size $B$ (better other letter) and $\alpha_k$ is the learning rate in iteration step $k$. Usually one uses batches of size $B \in \{32, 64, ..., 512\}$, where $B \ll M$. (Maybe add what is the advantage of using SGD and also add references to papers where the advantage of these batches was shown).
-\section*{Deutsch}
-Dabei ist $B_k \subset \{1,2,..., M\}$ ein zufällig ausgewählter Batch der größe $B$ (besser anderer Buchstabe) und $\alpha_k$ die learning rate im Iterationsschritt $k$. Üblicherweise verwendet man hierbei Batches der Größe $B \in \{32, 64, ..., 512\}$, wobei $B \ll M$. (Eventuell noch ergänzen, was die Vorteile bei der Verwendung von SGD ist und außerdem Verweise auf Paper einfügen, in denen der Vorteil dieser Batches aufgezeigt wurde.)
-\section*{English}
-Since these rather small batches are a "computational" challenge (possibly add references or justification), past research has looked at the impact of larger batch sizes on the learning process and final weights. (Possibly replace weights with result or something). 
-In general, it appears that using larger batches results in a larger generalization gap due to, among other things, so-called "sharp minima"\cite{keskar2017largebatch}. This can be partially compensated by an adjusted learning rate \cite{goyal2018accurate}, but the sharp minima remain. 
-Therefore, there have been recent (last is a suboptimal formulation) efforts to develop a problem formulation that not only minimizes the given loss function, but simultaneously adjusts the sharpness of the minima \cite{foret2021sharpnessaware}. 
-\section*{Deutsch}
-Da diese eher kleinen Batches eine "computational" Herausforderung sind (eventuell Verweise oder Begründung anbringen), wurde in der Vergangenheit untersucht, welche Auswirkungen größere Batch sizes auf den Lernprozess und die endgültigen Gewichte haben. (Evtl. Gewichte durch Resultat oder sowas austauschen) 
-Allgemein zeigt sich, dass unter Verwendung größerer Batches eine größere Generalisierungslücke entsteht, die unter anderem durch sogenannte "scharfe Minima" entsteht \cite{keskar2017largebatch}. Diese kann zum Teil durch eine angepasste learning Rate ausgeglichen werden \cite{goyal2018accurate}, die scharfen Minima bleiben allerdings bestehen. 
-Daher gab es zuletzt (zuletzt ist eine suboptimale Formulierung) Bestrebungen, eine Problemformulierung zu entwickeln, die nicht nur die gegebene Lossfunktion minimiert, sondern gleichzeitig die schärfe der Minima reguliert \cite{foret2021sharpnessaware}. 
+Here $B_k \subset \{1,2,..., M\}$ is a randomly selected batch of size $|B_k|$ and $\alpha_k$ is the learning rate in iteration step $k$. Usually one uses batches of size $|B_k| \in \{32, 64, ..., 512\}$, where $|B_k| \ll M$. (TODO: Maybe add what is the advantage of using SGD and also add references to papers where the advantage of these batches was shown)
+Since these rather small batches are a "computational" challenge (TODO: possibly add references or justification), past research has looked at the impact of larger batch sizes on the learning process and final weights. (TODO: Possibly replace weights with result or something). 
 
-\section*{English}
+In general, it appears that using larger batches results in a larger generalization gap with one possible reasoning behind this being so-called "sharp minima" \cite{keskar2017largebatch}. This can be partially compensated by an adjusted learning rate \cite{goyal2018accurate}, but the sharp minima remain. 
+Therefore, efforts have been made to develop a problem formulation that not only minimizes the given loss function, but simultaneously adjusts the sharpness of the minima \cite{foret2021sharpnessaware}. This formulation is referred to as Sharpness-Aware Minimization (SAM). 
+
+
 Within this project, we will now evaluate to what extent SAM is suitable to enable training with large batches. 
 
-We will train a very simple neural network for image recognition once using SGD with small to moderate batch sizes and apply SAM to large batches for comparison. 
+We will train a very simple neural network for image recognition once using SGD with small to moderate batch sizes and apply SAM to large batches for comparison. Furthermore we will explore how choosing different variants of SGD (e.g. Adam) and a variation of SAM, which adapts to the local geometry of the loss function (ASAM), will affect the generalization ability of the model.
 
-The resulting minima will be examined for sharpness, we will evaluate in which setting the models generalize better, and what the running time of each approach is. 
-We also evaluate how learning rate and batch size are related in the SGD scenario and check whether this relationship is also evident when SAM is used. 
- 
-In \cite{keskar2017largebatch}
-
-\section*{Deutsch}
-Innerhalb dieses Projektes wird nun evaluiert, inwiefern sich SAM eignet, um ein Training mit großen Batches zu ermöglichen. 
-
-Wir werden hierzu ein sehr einfaches neurales Netz zur Bilderkennung einmal unter Verwendung von SGD mit kleinen bis moderaten Batchsizes trainieren und zum Vergleich SAM auf große Batches anwenden. 
-
-Die sich dabei ergenden Minima werden auf ihre Schärfe hin untersucht, es wird evaluiert, in welchem Setting die Modelle besser generalisieren und wie die Laufzeit der jeweiligen Ansätze ist. 
-Außerdem evaluieren wir, in welchem Zusammenhang learning Rate und Batch Size im SGD Szenario stehen und überprüfen, ob sich dieser Zusammenhang auch unter der Verwendung von SAM zeigt. 
+The resulting minima will additionally be examined for sharpness and runtime. 
+We also evaluate how learning rate and batch size are related in the SGD scenario and check whether this relationship is also evident when SAM or ASAM is used. 
  
 In \cite{keskar2017largebatch}
 
