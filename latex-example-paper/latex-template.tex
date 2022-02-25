@@ -7,52 +7,81 @@
 \usepackage{amssymb}
 
 \begin{document}
-\title{Writing Scientific Papers and Software}
-
+\title{Large batch sizes for Deep Learning}
 \author{
-  Cheng Soon Ong\\
-  \textit{Department of Computer Science, ETH Zurich, Switzerland}
+  Mario Rene Surlemont\\
+  \textit{University Vienna}\and Elnaz Javadi Farahzadi\\
+  \textit{University Vienna}\and Alexander Stähle\\
+  \textit{University Vienna}
 }
 
 \maketitle
 
 \begin{abstract}
-  Eine kritische Entscheidung bei der Verwendung von SGD Varianten ist die größe der Batch size. In der Vergangenheit hat sich gezeigt, dass bei der Verwendung großer Batch sizes eine Generalisierungslücke entsteht. Diese lässt sich (bedingt) durch eine größere Learning rate ausgleichen, allerdings bleiben die gefundenen Minima meist schärfer als bei kleineren Batch Sizes. Innerhalb dieses Projektes wird evaluiert, ob sich eine Formulierung, die die sharpness von Minimizern reguliert, eignet, um die Probleme großer Batch sizes auszugleichen. 
+A critical decision when using SGD variants is choosing the size of a batch. In the past, it has been shown that a generalization gap occurs when using large batch sizes rather than small batch sizes. This can be compensated (conditionally) by a larger learning rate, but the minima found usually remain sharper than with smaller batch sizes. Within this project we evaluate whether a formulation that regulates the sharpness of minimizers is suitable to compensate for the problems of large batch sizes. We do this by assessing the results of an empirical study of a heterogeneous set of optimizers and loss functions in relation to different batch sizes. 
 \end{abstract}
 
 \section{Introduction}
-
-Deep Learning ist zu einem populären Standardansatz geworden um (unter anderem) Klassifizierungsprobleme zu lösen. 
-Das dabei (bei Deep Learning) zu lösende (nicht-konvexe) Optimierungsproblem ist von der Form 
+\label{sec:introduction}
+Deep Learning has become a popular approach to solve (among others) classification problems. 
+The non-convex optimization problem to be solved in Deep Learning applications is typically of the form 
 \begin{equation}
 \min_{w \in \mathbb{R}^d}{f(w) := \frac{1}{M} \sum_{i = 1}^M{f_i(w)}},1
 \end{equation}
-wobei $f_i$ die Lossfunktion ist, die den Verlust für Datenpunkt $i \in \{1, 2, ..., M\}$ berechnet. $M$ ist dabei die Anzahl der Datenpunkte und $w$ der Gewichtsvektor. 
-Meistens verwendet man zur Minimierung solcher Stochastic Gradient Descent (SGD) Varianten. Hierbei wird $f$ minimiert, indem man iterativ Schritte der Form
+where $f_i$ is the loss function that calculates the loss for data point $i \in \{1, 2, ..., M\}$, $M$ is the number of data points and $w$ is the weight vector. 
+For minimizing such functions one often uses Stochastic Gradient Descent (SGD) and its variants. $f$ is minimized by iteratively taking steps of the form
 \begin{equation}
 x_{k+1} = x_k - \alpha_k \biggl(\frac{1}{|B_k|} \sum_{i = 1}^{|B_k|}{\nabla f_i(w_k) \biggl)}.
 \end{equation}
-Dabei ist $B_k \subset \{1,2,..., M\}$ ein zufällig ausgewählter Batch der größe $B$ (besser anderer Buchstabe) und $\alpha_k$ die learning rate im Iterationsschritt $k$. Üblicherweise verwendet man hierbei Batches der Größe $B \in \{32, 64, ..., 512\}$, wobei $B \ll M$. (Eventuell noch ergänzen, was die Vorteile bei der Verwendung von SGD ist und außerdem Verweise auf Paper einfügen, in denen der Vorteil dieser Batches aufgezeigt wurde.)
+Here $B_k \subset \{1,2,..., M\}$ is a randomly selected batch of size $|B_k|$ and $\alpha_k$ is the learning rate in iteration step $k$. Usually one uses batches of size $|B_k| \in \{32, 64, ..., 512\}$, where $|B_k| \ll M$. (TODO: Maybe add what is the advantage of using SGD and also add references to papers where the advantage of these batches was shown)
+Since these rather small batches are a "computational" challenge (TODO: possibly add references or justification), past research has looked at the impact of larger batch sizes on the learning process and final weights. (TODO: Possibly replace weights with result or something). 
 
-Da diese eher kleinen Batches eine "computational" Herausforderung sind (eventuell Verweise oder Begründung anbringen), wurde in der Vergangenheit untersucht, welche Auswirkungen größere Batch sizes auf den Lernprozess und die endgültigen Gewichte haben. (Evtl. Gewichte durch Resultat oder sowas austauschen) 
-Allgemein zeigt sich, dass unter Verwendung größerer Batches eine größere Generalisierungslücke entsteht, die unter anderem durch sogenannte "scharfe Minima" entsteht \cite{keskar2017largebatch}. Diese kann zum Teil durch eine angepasste learning Rate ausgeglichen werden \cite{goyal2018accurate}, die scharfen Minima bleiben allerdings bestehen. 
-Daher gab es zuletzt (zuletzt ist eine suboptimale Formulierung) Bestrebungen, eine Problemformulierung zu entwickeln, die nicht nur die gegebene Lossfunktion minimiert, sondern gleichzeitig die schärfe der Minima reguliert \cite{foret2021sharpnessaware}. 
+In general, it appears that using larger batches results in a larger generalization gap with one possible reasoning behind this being so-called "sharp minima" \cite{keskar2017largebatch}. This can be partially compensated by an adjusted learning rate \cite{goyal2018accurate}, but the sharp minima remain. 
+Therefore, efforts have been made to develop a problem formulation that not only minimizes the given loss function, but simultaneously adjusts the sharpness of the minima \cite{foret2021sharpnessaware}. This formulation is referred to as Sharpness-Aware Minimization (SAM). 
 
-Innerhalb dieses Projektes wird nun evaluiert, inwiefern sich SAM eignet, um ein Training mit großen Batches zu ermöglichen. 
 
-Wir werden hierzu ein sehr einfaches neurales Netz zur Bilderkennung einmal unter Verwendung von SGD mit kleinen bis moderaten Batchsizes trainieren und zum Vergleich SAM auf große Batches anwenden. 
+Within this project, we will now evaluate to what extent SAM is suitable to enable training with large batches. 
 
-Die sich dabei ergenden Minima werden auf ihre Schärfe hin untersucht, es wird evaluiert, in welchem Setting die Modelle besser generalisieren und wie die Laufzeit der jeweiligen Ansätze ist. 
-Außerdem evaluieren wir, in welchem Zusammenhang learning Rate und Batch Size im SGD Szenario stehen und überprüfen, ob sich dieser Zusammenhang auch unter der Verwendung von SAM zeigt. 
+We will train a very simple neural network for image recognition once using SGD with small to moderate batch sizes and apply SAM to large batches for comparison. Furthermore we will explore how choosing different variants of SGD (e.g. Adam) and a variation of SAM, which adapts to the local geometry of the loss function (ASAM)\cite{kwonASAMAdaptiveSharpnessAware2021}, will affect the generalization ability of the model.
+
+The resulting minima will additionally be examined for sharpness and runtime. 
+We also evaluate how learning rate and batch size are related in the SGD scenario and check whether this relationship is also evident when SAM or ASAM is used. 
  
 In \cite{keskar2017largebatch}
 
 
+In Section 2 we will look into why training with large batch sizes is not as popular in deep learning applications. After that, Section 3 will cover SAM and the idea behind it. Section 4 will cover the experiments we conducted and we conclude this work with a short discussion.
+
+\section{Drawbacks of large batch sizes}
+\label{sec:drawbacks-large-bs}
+
+With SGD being one of the most prominent algorithms, it is used as a default method in numerous applications. While there are many different parameters to be tuned and perfected choosing a batch size is one of the most important ones to optimize. It is often observed that smaller batch sizes lead to a better generalization, while larger batch sizes seem to degrade the quality of the model. In this section, we will look into the known causes that are the fundamental issues we want to explore in this work. 
+
+\subsection{Known issues}
+\label{subsec:known-issues}
+
+While small batch sizes, in theory, are not guaranteed to converge to a global minimum, they seem to outperform large batch sizes repeatedly when looking at the error on the test set \cite{keskar2017largebatch}. Interestingly, the error on the training set seems to be similar to that of small batch sizes. This discrepancy between train and test error is also referred to as the generalization gap. Practitioners seem to run into this generalization gap, especially in large batch learning \cite{lecunEfficientBackProp2012}. Still large batch sizes allow for parallelized computations in a manner that is way above the possibilities of parallelizing small batch training even considering efforts to overcome this shortcoming (e.g. \cite{dasDistributedDeepLearning2016}). Parallelization leads to huge speed-ups but as long as large batch sizes suffer larger generalization gaps this time-saving property does not outweigh the advantages of smaller batches.
+
+\subsection{Our Observations}
+\label{subsec:our-observations}
+
+In order for our following experiments to have a foundation we conducted similar studies as in previous works (see \cite{changEffectBatchSize2020}, \cite{shenEffectBatchSize2018}) which were trying to look into causes of the larger generalization gap. Our observations are based on a simple deep learning model consisting of two convolutional layers with 32 and 64 filters, ReLU activations and intermediate max-pooling and drop-out layers and a single dense layer at the end. Even on this small model we could observe higher generalization gaps for larger batch sizes which reached up to $XX\%$ (TODO: fill in a number here) (see Appendix).
+
+\subsection{Sharpness of Minima}
+\label{subsec:sharpness}
+
+Keskar et al make the interesting observation that models trained with large batch sizes seem to tend to converge to sharp minima rather than flat minima which is the case for small batch sizes \cite{keskar2017largebatch}. This is a possible explanation for the above-mentioned generalization gap. The model might perform well on the training data but as the test data is generally not identical to the training data even small shifts in the optimal minima from training set to test set can lead to significant differences in the error. Small batch sizes however converge to flatter minima which is more robust to any shifts of the minimum, leading to a better performance on the test set. It is therefore assumed to be desirable for a model to converge to flatter minima.
+
+To encourage flatter minima Keskar et al attempt a number of techniques involving data augmentation and conservative training but while they do improve the generalization of models with large batch sizes the sharpness of the minima stays the same \cite{keskar2017largebatch}. We therefore turn to a work of Foret et al in which they present an easy-to-use and effective way to penalize sharp minima \cite{foret2021sharpnessaware}. In the following sections we will explain the idea behind their approach and evaluate if this idea remedies the problem of large batches.
 
 
 
-The aim of writing a paper is to infect the mind of your reader with
-the brilliance of your idea~\cite{jones08}. 
+
+
+
+\section{old stuff}
+
+The aim of writing a paper is to infect the mind of your reader with the brilliance of your idea~\cite{jones08}. 
 The hope is that after reading your
 paper, the audience will be convinced to try out your idea. In other
 words, it is the medium to transport the idea from your head to your
@@ -315,9 +344,10 @@ To write good papers, identify your key idea, make your contributions
 explicit, and use examples and illustrations to describe the problems
 and solutions.
 
-\section*{Acknowledgements}
-The author thanks Christian Sigg for his careful reading and helpful
-suggestions.
+\section*{Appendix}
+\label{sec:appendix}
+Additional conducted experiments:
+TODO put plots of initial vanilla generalization gap (val loss / train loss)
 
 \newpage
 \bibliographystyle{IEEEtran}
