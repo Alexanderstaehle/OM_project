@@ -8,7 +8,6 @@
 
 \begin{document}
 \title{Large batch sizes for Deep Learning}
-
 \author{
   Mario Rene Surlemont\\
   \textit{University Vienna}\and Elnaz Javadi Farahzadi\\
@@ -23,7 +22,7 @@ A critical decision when using SGD variants is choosing the size of a batch. In 
 \end{abstract}
 
 \section{Introduction}
-\section*{English}
+\label{sec:introduction}
 Deep Learning has become a popular approach to solve (among others) classification problems. 
 The non-convex optimization problem to be solved in Deep Learning applications is typically of the form 
 \begin{equation}
@@ -43,15 +42,34 @@ Therefore, efforts have been made to develop a problem formulation that not only
 
 Within this project, we will now evaluate to what extent SAM is suitable to enable training with large batches. 
 
-We will train a very simple neural network for image recognition once using SGD with small to moderate batch sizes and apply SAM to large batches for comparison. Furthermore we will explore how choosing different variants of SGD (e.g. Adam) and a variation of SAM, which adapts to the local geometry of the loss function (ASAM), will affect the generalization ability of the model.
+We will train a very simple neural network for image recognition once using SGD with small to moderate batch sizes and apply SAM to large batches for comparison. Furthermore we will explore how choosing different variants of SGD (e.g. Adam) and a variation of SAM, which adapts to the local geometry of the loss function (ASAM)\cite{kwonASAMAdaptiveSharpnessAware2021}, will affect the generalization ability of the model.
 
 The resulting minima will additionally be examined for sharpness and runtime. 
 We also evaluate how learning rate and batch size are related in the SGD scenario and check whether this relationship is also evident when SAM or ASAM is used. 
  
 In \cite{keskar2017largebatch}
 
+In Section 2 we will look into why training with large batch sizes is not as popular in deep learning applications, after that Section 3 will cover SAM and the idea behind it. Section 4 will cover the experiments we conducted and we conclude this work with a short discussion.
+
+\section{Drawbacks of large batch sizes}
+\label{sec:drawbacks-large-bs}
+
+With SGD being one of the most prominent algorithms it is used as a default method in numerous applications. While there are many different parameters to be tuned and perfected choosing a batch size is one of the most important ones to optimize. It is often observed that smaller batch sizes lead to a better generalization while larger batch sizes seem to degrade the quality of the model. In this section we will look into the known causes that are the fundamental issues we want to explore in this work. 
+
+\subsection{Known issues}
+\label{subsec:known-issues}
+While small batch sizes in theory are not guaranteed to converge to a global minimum they seem to outperform large batch sizes repeatedly when looking at the error on the test set \cite{keskar2017largebatch}. Interestingly, the error on the training set seems to be similar to that of small batch sizes. This discrepancy between train and test error is also referred to as the generalization gap. Practitioners seem to run into this generalization gap especially in large batch learning \cite{lecunEfficientBackProp2012}. Still large batch sizes allow for parallelized computations in a manner that is way above the possibilities of parallelizing small batch training even considering efforts to overcome this shortcoming (e.g. \cite{dasDistributedDeepLearning2016}). Parallelization leads to huge speed-ups but as long as large batch sizes suffer larger generalization gaps this time saving property does not outweigh the advantages of smaller batches.
+
+\subsection{Our Observations}
+\label{subsec:our-observations}
+In order for our following experiments to have a foundation we conducted similar studies as in previous works (see \cite{changEffectBatchSize2020}, \cite{shenEffectBatchSize2018}) which were trying to look into causes of the larger generalization gap. Our observations are based on a simple deep learning model consisting of two convolutional layers with 32 and 64 filters, ReLU activations and intermediate max-pooling and drop-out layers and a single dense layer at the end. Even on this small model we could observe higher generalization gaps for larger batch sizes which reached up to $XX\%$ (TODO: fill in a number here) (see Appendix).
 
 
+
+
+
+
+\section{old stuff}
 
 The aim of writing a paper is to infect the mind of your reader with the brilliance of your idea~\cite{jones08}. 
 The hope is that after reading your
@@ -316,9 +334,10 @@ To write good papers, identify your key idea, make your contributions
 explicit, and use examples and illustrations to describe the problems
 and solutions.
 
-\section*{Acknowledgements}
-The author thanks Christian Sigg for his careful reading and helpful
-suggestions.
+\section*{Appendix}
+\label{sec:appendix}
+Additional conducted experiments:
+TODO put plots of initial vanilla generalization gap (val loss / train loss)
 
 \newpage
 \bibliographystyle{IEEEtran}
