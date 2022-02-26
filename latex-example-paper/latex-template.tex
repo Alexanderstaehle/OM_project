@@ -5,6 +5,8 @@
 \usepackage{amsfonts}
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 
 \begin{document}
 \title{Large batch sizes for Deep Learning}
@@ -25,7 +27,7 @@ A critical decision when using SGD variants is choosing the size of a batch. In 
 \label{sec:introduction}
 Deep Learning has become a popular approach to solve (among others) classification problems. 
 The non-convex optimization problem to be solved in Deep Learning applications is typically of the form 
-\begin{equation}
+\begin{equation} \label{eq:loss}
 \min_{w \in \mathbb{R}^d}{f(w) := \frac{1}{M} \sum_{i = 1}^M{f_i(w)}},1
 \end{equation}
 where $f_i$ is the loss function that calculates the loss for data point $i \in \{1, 2, ..., M\}$, $M$ is the number of data points and $w$ is the weight vector. 
@@ -33,8 +35,9 @@ For minimizing such functions one often uses Stochastic Gradient Descent (SGD) a
 \begin{equation}
 x_{k+1} = x_k - \alpha_k \biggl(\frac{1}{|B_k|} \sum_{i = 1}^{|B_k|}{\nabla f_i(w_k) \biggl)}.
 \end{equation}
-Here $B_k \subset \{1,2,..., M\}$ is a randomly selected batch of size $|B_k|$ and $\alpha_k$ is the learning rate in iteration step $k$. Usually one uses batches of size $|B_k| \in \{32, 64, ..., 512\}$, where $|B_k| \ll M$. (TODO: Maybe add what is the advantage of using SGD and also add references to papers where the advantage of these batches was shown)
-Since these rather small batches are a "computational" challenge (TODO: possibly add references or justification), past research has looked at the impact of larger batch sizes on the learning process and final weights. (TODO: Possibly replace weights with result or something). 
+Here $B_k \subset \{1,2,..., M\}$ is a randomly selected batch of size $|B_k|$ and $\alpha_k$ is the learning rate in iteration step $k$. Usually one uses batches of size $|B_k| \in \{32, 64, ..., 512\}$, where $|B_k| \ll M$. 
+
+Since the calculation of the gradient of the loss function cannot be parallelised well when using these rather small batches and can therefore increase the runtime considerably, the influence of large batch sizes on the learning process and the final result has been investigated in the past. 
 
 In general, it appears that using larger batches results in a larger generalization gap with one possible reasoning behind this being so-called "sharp minima" \cite{keskar2017largebatch}. This can be partially compensated by an adjusted learning rate \cite{goyal2018accurate}, but the sharp minima remain. 
 Therefore, efforts have been made to develop a problem formulation that not only minimizes the given loss function, but simultaneously adjusts the sharpness of the minima \cite{foret2021sharpnessaware}. This formulation is referred to as Sharpness-Aware Minimization (SAM). 
@@ -42,10 +45,10 @@ Therefore, efforts have been made to develop a problem formulation that not only
 
 Within this project, we will now evaluate to what extent SAM is suitable to enable training with large batches. 
 
-We will train a very simple neural network for image recognition once using SGD with small to moderate batch sizes and apply SAM to large batches for comparison. Furthermore we will explore how choosing different variants of SGD (e.g. Adam) and a variation of SAM, which adapts to the local geometry of the loss function (ASAM)\cite{kwonASAMAdaptiveSharpnessAware2021}, will affect the generalization ability of the model.
+We will train a very simple neural network for image recognition once using SGD with small to moderate batch sizes and apply SAM to large batches for comparison. Furthermore we will explore how choosing different variants of SGD (e.g. Adam) will affect the generalization ability of the model.
 
 The resulting minima will additionally be examined for sharpness and runtime. 
-We also evaluate how learning rate and batch size are related in the SGD scenario and check whether this relationship is also evident when SAM or ASAM is used. 
+We also evaluate how learning rate and batch size are related in the SGD scenario and check whether this relationship is also evident when SAM is used. 
  
 In \cite{keskar2017largebatch}
 
@@ -74,9 +77,51 @@ Keskar et al make the interesting observation that models trained with large bat
 
 To encourage flatter minima Keskar et al attempt a number of techniques involving data augmentation and conservative training but while they do improve the generalization of models with large batch sizes the sharpness of the minima stays the same \cite{keskar2017largebatch}. We therefore turn to a work of Foret et al in which they present an easy-to-use and effective way to penalize sharp minima \cite{foret2021sharpnessaware}. In the following sections we will explain the idea behind their approach and evaluate if this idea remedies the problem of large batches.
 
+\section{SAM}
+In \cite{foret2021sharpnessaware} a problem formulation was presented in which an arbitrary loss function of the form \eqref{eq:loss} can be minimized simultaneously with its sharpness. The basic goal is to ensure that the value of the loss function does not change too much within a $\epsilon$-environment of the $p$-norm. 
 
+The basic problem formulation here is 
+\begin{equation} \label{eq:sam_real}
+\min_\omega L_S^{SAM}(\omega) + \lambda ||\omega||_2^2,
+\end{equation}
 
+where 
+\begin{equation} \label{eq:sam_eps}
+L_S^{SAM} := \max_{|\epsilon||_p \leq \rho} L_S(\omega + \epsilon).
+\end{equation}
 
+$\rho$ is a hyperparameter and $p$ indicates which norm is used. The authors show that in general $p = 2$ is the optimal choice. Therefore, we also use this parameter in the further course. 
+
+In order to minimize this problem, the authors propose an approximation of the gradient 
+\begin{equation} \label{eq:sam_approx}
+\nabla_\omega L_S^{SAM}(\omega) + \lambda ||\omega||_2^2 \approx \nabla_\omega L_S(\omega)_{|\omega + \hat{\epsilon}(\omega)}, 
+\end{equation}
+
+where 
+\begin{equation} \label{eq:sam_eps_hat}
+\hat{\epsilon}(\omega) := \arg \max_{|\epsilon||_p \leq \rho} L_S(\omega + \epsilon) = \rho \frac{\nabla_\omega L_S(\omega)}{|\nabla_\omega L_S(\omega)||_2},
+\end{equation}
+
+ which can be computed by standard libraries like TensorFlow via autodifferentiation. This results in an problem formulation that can be minimized using SGD or ADAM. 
+
+The resulting SAM algorithm is as follows: 
+
+\begin{algorithm}
+\caption{SAM-Algorithmus}\label{alg:sam}
+\begin{algorithmic}
+\Require $X := (\cup_{i = 1}^n\{x_i, y_i\})$, Loss function $l$, Batch size $b$, Optimizer $o$, Neighborhood size $\rho$
+\Ensure Model $M_S$ trained with SAM
+\State Initialize weights $\omega_0, t = 0$;
+\While {$not \, converged$}
+	\State $\mathcal{B} \gets \{(x_1, y_1), ..., (x_b, y_b)\}$;	\Comment{a randomly chosen batch of size $b$}
+	\State Compute gradient $L_\omega L_\mathcal{B}(\omega)$ of the batch's training loss; \Comment{Step 1}
+	\State Compute $\hat{\epsilon}(\omega)$ via $\eqref{eq:sam_eps_hat}$; \Comment{Step 2}
+	\State Compute $g := \nabla_\omega L_\mathcal{B}(\omega)_{|\omega + \hat{\epsilon}(\omega)}$; \Comment{Step 3}
+	\State Update weights $\omega_{t+1}$ via optimizer $o$ using $g$;
+	\State $t \gets t+1$
+\EndWhile
+\end{algorithmic}
+\end{algorithm}
 
 
 \section{old stuff}
