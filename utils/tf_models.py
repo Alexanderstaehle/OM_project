@@ -81,6 +81,7 @@ class SAMModel(tf.keras.Model):
     def train_step(self, data):
         (images, labels) = data
         e_ws = []
+        # Step 1
         with tf.GradientTape() as tape:
             predictions = self.base_model(images)
             loss = self.compiled_loss(labels, predictions)
@@ -89,11 +90,13 @@ class SAMModel(tf.keras.Model):
         grad_norm = self._grad_norm(trainable_params, gradients)
         scale = self.rho / (grad_norm + 1e-12)
 
+        # Step 2
         for (grad, param) in zip(gradients, trainable_params):
             e_w = (tf.math.pow(param, 2.0) if self.adaptive else 1.0) * grad * scale
             param.assign_add(e_w)
             e_ws.append(e_w)
 
+        # Step 3
         with tf.GradientTape() as tape:
             predictions = self.base_model(images)
             loss = self.compiled_loss(labels, predictions)
