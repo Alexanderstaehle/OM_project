@@ -1,0 +1,6 @@
+matplotlib
+seaborn
+numpy
+tensorflow
+tensorflow_datasets
+scipy
