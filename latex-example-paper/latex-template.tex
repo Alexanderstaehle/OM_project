@@ -28,7 +28,7 @@ A critical decision when using SGD variants is choosing the size of a batch. In 
 Deep Learning has become a popular approach to solve (among others) classification problems. 
 The non-convex optimization problem to be solved in Deep Learning applications is typically of the form 
 \begin{equation} \label{eq:loss}
-\min_{w \in \mathbb{R}^d}{f(w) := \frac{1}{M} \sum_{i = 1}^M{f_i(w)}},1
+\min_{w \in \mathbb{R}^d}{f(w) := \frac{1}{M} \sum_{i = 1}^M{f_i(w)}}
 \end{equation}
 where $f_i$ is the loss function that calculates the loss for data point $i \in \{1, 2, ..., M\}$, $M$ is the number of data points and $w$ is the weight vector. 
 For minimizing such functions one often uses Stochastic Gradient Descent (SGD) and its variants. $f$ is minimized by iteratively taking steps of the form
@@ -66,12 +66,12 @@ While small batch sizes, in theory, are not guaranteed to converge to a global m
 \subsection{Our Observations}
 \label{subsec:our-observations}
 
-In order for our following experiments to have a foundation we conducted similar studies as in previous works (see \cite{changEffectBatchSize2020}, \cite{shenEffectBatchSize2018}) which were trying to look into causes of the larger generalization gap. Our observations are based on a simple deep learning model consisting of two convolutional layers with 32 and 64 filters, ReLU activations and intermediate max-pooling and drop-out layers and a single dense layer at the end. Even on this small model we could observe higher generalization gaps for larger batch sizes which reached up to $XX\%$ (TODO: fill in a number here) (see Appendix).
+In order for our following experiments to have a foundation we conducted similar studies as in previous works (see \cite{changEffectBatchSize2020}, \cite{shenEffectBatchSize2018}) which were trying to look into causes of the larger generalization gap. Our observations are based on a simple deep learning model consisting of two convolutional layers with 32 and 64 filters, ReLU activations and intermediate max-pooling and drop-out layers and a single dense layer at the end. As expected large batch sizes did in fact perform worse than smaller batch sizes (see Figure \ref{fig:val-loss-with-without}).
 
 \subsection{Sharpness of Minima}
 \label{subsec:sharpness}
 
-Keskar et al make the interesting observation that models trained with large batch sizes seem to tend to converge to sharp minima rather than flat minima which is the case for small batch sizes \cite{keskar2017largebatch}. This is a possible explanation for the above-mentioned generalization gap. The model might perform well on the training data but as the test data is generally not identical to the training data even small shifts in the optimal minima from training set to test set can lead to significant differences in the error. Small batch sizes however converge to flatter minima which is more robust to any shifts of the minimum, leading to a better performance on the test set. It is therefore assumed to be desirable for a model to converge to flatter minima.
+Keskar et al make the interesting observation that models trained with large batch sizes tend to converge to sharp minima rather than flat minima which is the case for small batch sizes \cite{keskar2017largebatch}. This is a possible explanation for the above-mentioned generalization gap. The model might perform well on the training data but as the test data is generally not identical to the training data even small shifts in the optimal minima from training set to test set can lead to significant differences in the error. Small batch sizes however converge to flatter minima which is more robust to any shifts of the minimum, leading to a better performance on the test set. It is therefore assumed to be desirable for a model to converge to flatter minima.
 
 To encourage flatter minima Keskar et al attempt a number of techniques involving data augmentation and conservative training but while they do improve the generalization of models with large batch sizes the sharpness of the minima stays the same \cite{keskar2017largebatch}. We therefore turn to a work of Foret et al in which they present an easy-to-use and effective way to penalize sharp minima \cite{foret2021sharpnessaware}. In the following sections we will explain the idea behind their approach and evaluate if this idea remedies the problem of large batches.
 
@@ -188,18 +188,12 @@ report the mean (average value) along with a measure of variability
 
 \section{Summary}
 
-The aim of a scientific paper is to convey the idea or discovery of
-the researcher to the minds of the readers. The associated software
-package provides the relevant details, which are often only briefly
-explained in the paper, such that the research can be reproduced.
-To write good papers, identify your key idea, make your contributions
-explicit, and use examples and illustrations to describe the problems
-and solutions.
+Since large batch sizes often suffer from a larger generalization gap we tried to investigate the causes of this phenomena. As a result we focussed on achieving flatter minima as this seemed to be a factor between small and large batch sizes. We apply a solution in form of SAM to evaluate if SAM can be used to circumvent this issue. We found that although there are some cases where the sharpness is reduced in large batch training we could not achieve flatter minima. The sharpness score rather increased than decreased.
 
 \section*{Appendix}
 \label{sec:appendix}
 Additional conducted experiments:
-TODO put plots of initial vanilla generalization gap (val loss / train loss)
+TODO put plots
 
 \newpage
 \bibliographystyle{IEEEtran}
