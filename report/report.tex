@@ -53,46 +53,39 @@ We additionaly evaluate how learning rate and batch size are related in the SGD 
 \section{Drawbacks of large batch sizes}
 \label{sec:drawbacks-large-bs}
 
-With SGD being one of the most prominent algorithms, it is used as a default method in numerous applications. While there are many different parameters to be tuned and perfected, choosing a batch size is one of the most important ones to optimize. It is often observed that smaller batch sizes lead to a better generalization, while larger batch sizes seem to degrade the quality of the model. In this section, we will look into the known causes that are the fundamental issues we want to explore in this work. 
+With SGD being one of the most prominent algorithms, it is used as a default method in numerous applications. While there are many different parameters to be tuned and perfected, choosing a batch size is one of the most important ones to optimize. It is often observed that smaller batch sizes lead to a better generalization, while larger batch sizes seem to degrade the quality of the model. In this section, we will look into some known causes and have a deeper look into sharpness of minima. 
 
 \subsection{Known issues}
 \label{subsec:known-issues}
 
-While small batch sizes, in theory, are not guaranteed to converge to better minima, they seem to outperform large batch sizes repeatedly when looking at the error on the test set \cite{keskar2017largebatch}. Interestingly, the error on the training set seems to be similar to that of small batch sizes. This discrepancy between train and test error is also referred to as the generalization gap. Practitioners seem to run into this generalization gap, especially in large batch learning \cite{lecunEfficientBackProp2012}. Still large batch sizes allow for parallelized computations in a manner that is way above the possibilities of parallelizing small batch training even considering efforts to overcome this shortcoming (e.g. \cite{dasDistributedDeepLearning2016}). Parallelization leads to huge speed-ups but as long as large batch sizes suffer larger generalization gaps this time-saving property does not outweigh the advantages of smaller batches.
+While small batch sizes, in theory, are not guaranteed to converge to better minima, they seem to outperform large batch sizes repeatedly when looking at the error on the test set \cite{keskar2017largebatch}. Interestingly, their error on the training set seems to be similar to that of small batch sizes. This discrepancy between train and test error is also referred to as the generalization gap. Practitioners seem to run into this generalization gap, especially in large batch learning \cite{lecunEfficientBackProp2012}. Nevertheless large batch sizes allow for parallelized computations in a manner that is way above the possibilities of parallelizing small batch training even considering efforts to overcome this shortcoming (e.g. \cite{dasDistributedDeepLearning2016}). Parallelization leads to huge speed-ups but as long as large batch sizes suffer larger generalization gaps this time-saving property does not always outweigh the advantages of smaller batches.
 
 \subsection{Sharpness of Minima}
 \label{subsec:sharpness}
-Keskar et al make the interesting observation that models trained with large batch sizes tend to converge to sharp minima rather than flat minima which is the case for small batch sizes \cite{keskar2017largebatch}. This is a possible explanation for the above-mentioned generalization gap. The model might perform well on the training data but as the test data is generally not identical to the training data even small shifts in the optimal minima from training set to test set can lead to significant differences in the error. Small batch sizes however converge to flatter minima which is more robust to any shifts of the minimum, leading to a better performance on the test set. It is therefore assumed to be desirable for a model to converge to flatter minima.
+Keskar et al make the interesting observation that models trained with large batch sizes tend to converge to sharp minima rather than flat minima, which is the case for small batch sizes \cite{keskar2017largebatch}. This is a possible explanation for the above-mentioned generalization gap. The model might perform well on the training data but as the test data is generally not identical to the training data even small shifts in the optimal minima from training set to test set can lead to significant differences in the error. Small batch sizes however converge to flatter minima which is more robust to any shifts of the minimum, leading to a better performance on the test set. It is therefore assumed to be desirable for a model to converge to flatter minima.
 
 To encourage flatter minima Keskar et al attempt a number of techniques involving data augmentation and conservative training but while they do improve the generalization of models with large batch sizes the sharpness of the minima stays the same \cite{keskar2017largebatch}. We therefore turn to a work of Foret et al in which they present an easy-to-use and effective way to penalize sharp minima \cite{foret2021sharpnessaware}. In the following sections we will explain the idea behind their approach and evaluate if this idea remedies the problem of large batches.
 
 \section{SAM}
 In \cite{foret2021sharpnessaware} a problem formulation was presented in which an arbitrary loss function of the form \eqref{eq:loss} can be minimized simultaneously with its sharpness. The basic goal is to ensure that the value of the loss function does not change too much within a $\epsilon$-environment of the $p$-norm. 
-
 The basic problem formulation here is 
 \begin{equation} \label{eq:sam_real}
 \min_\omega L_S^{SAM}(\omega) + \lambda ||\omega||_2^2,
 \end{equation}
-
 where 
 \begin{equation} \label{eq:sam_eps}
-L_S^{SAM} := \max_{|\epsilon||_p \leq \rho} L_S(\omega + \epsilon).
+L_S^{SAM} := \max_{||\epsilon||_p \leq \rho} L_S(\omega + \epsilon).
 \end{equation}
-
 $\rho$ is a hyperparameter and $p$ indicates which norm is used. The authors show that usually $p = 2$ is the optimal choice. Therefore, we also use this parameter in the further course. 
-
 In order to minimize this problem, the authors propose an approximation of the gradient 
 \begin{equation} \label{eq:sam_approx}
 \nabla_\omega L_S^{SAM}(\omega) + \lambda ||\omega||_2^2 \approx \nabla_\omega L_S(\omega)_{|\omega + \hat{\epsilon}(\omega)}, 
 \end{equation}
-
 where 
 \begin{equation} \label{eq:sam_eps_hat}
 \hat{\epsilon}(\omega) := \arg \max_{|\epsilon||_p \leq \rho} L_S(\omega + \epsilon) = \rho \frac{\nabla_\omega L_S(\omega)}{|\nabla_\omega L_S(\omega)||_2},
 \end{equation}
-
  which can be computed by standard libraries like TensorFlow via autodifferentiation. This results in an problem formulation that can be minimized using SGD or Adam. 
-
 The resulting \hyperref[alg:sam]{SAM algorithm} can be found in the appendix. 
 
 \section{Models and Methods}
@@ -114,7 +107,7 @@ We train and evaluate our network using the FASHION-MNIST
 dataset \cite{fashion-mnist}. 
 
 \subsection{Experiment setup}
-In order to minimise our loss function we use either SGD or as Adam \cite{kingma2017adam} with batch sizes $|\mathcal{B}| \in \{32, 64, 128, 256, 512, 1024\}$. We use SGD in all tests with heavy ball momentum and parameter "momentum" $= 0.9$.
+In order to minimise our loss function we use either SGD or  Adam \cite{kingma2017adam} with batch sizes $|\mathcal{B}| \in \{32, 64, 128, 256, 512, 1024\}$. We use SGD in all tests with heavy ball momentum and parameter "momentum" $= 0.9$.
 In the case of Adam, we use the default configuration of Keras.  
 We do not use learning rate decay.
 
@@ -136,7 +129,7 @@ Surprisingly, and in contradiction to previous publications, in our experiments,
 
 When using large batches, the runtime is reduced quite a bit. This is because the calculation of the gradients can be better parallelized with larger batches. This reduces the training time per epoch. The runtime when using SAM basically doubles, regardless of the size of the batches used. This is primarily because the gradient must be calculated twice for each iteration step when using SAM.
 
-Our tests also showed that in no scenario could an improvement be achieved by SAM when using Adam. Neither the sharpness nor the validation accuracy could be improved even when using a fixed learning rate (see Figure \ref{fig:adam-val-loss-with-without} and \ref{fig:adam-sharpness-with-without}). SAM could not provide a benefit here.
+Our tests also showed that in no scenario could an improvement be achieved by SAM when using Adam. Neither the sharpness nor the validation accuracy could be improved no matter if we usea fixed learning rate or an adjusted (see Figure \ref{fig:adam-val-loss-with-without} and \ref{fig:adam-sharpness-with-without}). SAM could not provide a benefit here.
 
 In summary, we can say that (in our scenario) SAM, while maintaining validation accuracy, is only able to reduce sharpness at small batch sizes, i.e. $|\mathcal{B}| \in \{32, 64\}$ and only when using SGD. Therefore, it cannot be deduced from our experiments that SAM brings an advantage with large batches. On the contrary, the runtime doubles and the final validation accuracy decreases.
 
