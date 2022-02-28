@@ -66,7 +66,7 @@ While small batch sizes, in theory, are not guaranteed to converge to a global m
 \subsection{Our Observations}
 \label{subsec:our-observations}
 
-In order for our following experiments to have a foundation we conducted similar studies as in previous works (see \cite{changEffectBatchSize2020}, \cite{shenEffectBatchSize2018}) which were trying to look into causes of the larger generalization gap. Our observations are based on a simple deep learning model consisting of two convolutional layers with 32 and 64 filters, ReLU activations and intermediate max-pooling and drop-out layers and a single dense layer at the end. As expected large batch sizes did in fact perform worse than smaller batch sizes (see Figure \ref{fig:val-loss-with-without}).
+In order for our following experiments to have a foundation we conducted similar studies as in previous works (see \cite{changEffectBatchSize2020}, \cite{shenEffectBatchSize2018}) which were trying to look into causes of the larger generalization gap. Our observations are based on a simple deep learning model consisting of two convolutional layers with 32 and 64 filters, ReLU activations and intermediate max-pooling and drop-out layers and a single dense layer at the end. As expected large batch sizes did in fact perform worse than smaller batch sizes (see Appendix \ref{fig:val-loss-with-without-fixed}). As stated before increasing the learning rate can close the distance of large and small batch sizes. This can also be seen in our results (see Figure \ref{fig:val-loss-with-without}). However when using other variants of SGD like Adam this approach does not work. The goal is therefore to find an approach that works in a more general setting.
 
 \subsection{Sharpness of Minima}
 \label{subsec:sharpness}
@@ -107,7 +107,7 @@ The resulting SAM algorithm is as follows:
 \begin{algorithm}
 \caption{SAM-Algorithmus}\label{alg:sam}
 \begin{algorithmic}
-\Require $X := (\cup_{i = 1}^n\{x_i, y_i\})$, Loss function $l$, Batch size $b$, Optimizer $o$, Neighborhood size $\rho$
+\Require $X := (\cup_{i = 1}^n\{x_i, y_i\})$, Loss function $l$, Batch size $b$, Optimizer $o$, Neighbourhood size $\rho$
 \Ensure Model $M_S$ trained with SAM
 \State Initialize weights $\omega_0, t = 0$;
 \While {$not \, converged$}
@@ -125,18 +125,38 @@ The resulting SAM algorithm is as follows:
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\columnwidth]{img/figure1_val_loss_with_without_sam_sgd}
-  \caption{Training and test loss for SGD without (top) and with (bottom) SAM.}
+  \caption{Training and test loss for SGD with an increasing learning rate, once without (top) and once with (bottom) SAM.}
   \vspace{-3mm}
   \label{fig:val-loss-with-without}
 \end{figure}
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\columnwidth]{img/figure2_sharpness_with_without_sam_sgd}
-  \caption{Sharpness scores for SGD without (left) and with (right) SAM. Note the y-axis is not shared.}
+  \caption{Sharpness scores for SGD with an increasing learning rate, once without (left) and once with (right) SAM. Note the y-axis is not shared. One can see the decrease in sharpness for batch sizes 32 and 64 as well as the outlier in 1024.}
   \vspace{-3mm}
   \label{fig:sharpness-with-without}
 \end{figure}
-In this section we will evaluate our results. At first we will look at the validation loss of SGD with and without SAM. Surprisingly enough the model with SAM seems to perform worse on the test set than without (see figure \ref{fig:val-loss-with-without}). This is not surprising considering the fact that the minima are even sharper when using SAM for large batch sizes (see figure \ref{fig:sharpness-with-without}). Why we don't observe flatter minima is up for further investigation as we are using the almost unchanged (except the base model) implementation of \cite{paulSharpnessAwareMinimizationTensorFlow2022}.
+We conducted the following experiments: A simple model like described in \ref{subsec:our-observations} was trained both with a constant learning rate and with an adjusted learning rate. In both cases, we considered different batch sizes (extrema of 32 and 1024) and trained the model once with and once without SAM.
+
+SGD-models with and increasing learning rate and SAM did in fact achieve a reduced sharpness for some batches. This reduction was strongest for batch size 32, where the sharpness was reduced by a factor of nine. For batch size 64, the sharpness was also reduced by half. However, we could no longer see any improvement for batch size 128 and the sharpness even worsened for the larger batch sizes. The largest batch size (1024) is an outlier. Here the sharpness is lowest, but the validation accuracy is also reduced (Figure \ref{fig:val-loss-with-without} and \ref{fig:sharpness-with-without}). Accordingly, this cannot generally be called a success.
+
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\columnwidth]{img/figure5_gen_gap}
+  \caption{Ratio of train error to test error for fixed (top) and increasing (bottom) learning rates once without (left) and once with (right) SAM.}
+  \vspace{-3mm}
+  \label{fig:gen-gap}
+\end{figure}
+
+Looking at the generalization gap one can see from Figure \ref{fig:gen-gap} that...
+
+The outlier in the sharpness and the validation accuracy for batch size 1024 is interesting. We cannot provide an exact explanation for this. It is possible that the minimiser is not only in a local minimum of the function value, but also in a local minimum of the sharpness, from which it cannot break out. It would be interesting to observe in the future whether an increase in the hyperparameter rho can bring about a change here and prevent local sharpness minima. 
+
+When using large batches, the runtime is reduced quite a bit. This is because the calculation of the gradients can be better parallelized with larger batches. This reduces the training time per epoch.
+
+The runtime when using SAM basically doubles, regardless of the size of the batches used. This is primarily because the gradient must be calculated twice for each iteration step when using SAM.
+
+Our tests also showed that in no scenario could an improvement be achieved by SAM when using Adam. Neither the sharpness nor the validation accuracy could be improved even when using a fixed learning rate (see Figure \ref{fig:adam-val-loss-with-without} and \ref{fig:adam-sharpness-with-without}). SAM could not provide a benefit here.
 
 \begin{figure}[tbp]
   \centering
@@ -152,6 +172,13 @@ In this section we will evaluate our results. At first we will look at the valid
   \vspace{-3mm}
   \label{fig:adam-sharpness-with-without}
 \end{figure}
+
+In summary, we can say that (in our scenario) SAM, while maintaining validation accuracy, is only able to reduce sharpness at small batch sizes, i.e. {32, 64}. Therefore, it cannot be deduced from our experiments that SAM brings an advantage with large batches. On the contrary, the runtime doubles and the final validation accuracy decreases.
+
+\section{old}
+In this section we will evaluate our results. Note that for all the results in this section we use an increasing learning rate for the respective optimizer. At first we will look at the validation loss of SGD with and without SAM. Surprisingly enough the model with SAM seems to perform worse on the test set than without (see figure \ref{fig:val-loss-with-without}). This is not surprising considering the fact that the minima are even sharper when using SAM for large batch sizes (see figure \ref{fig:sharpness-with-without}). Why we don't observe flatter minima is up for further investigation as we are using the almost unchanged (except the base model) implementation of \cite{paulSharpnessAwareMinimizationTensorFlow2022}.
+
+
 Using different variants of SGD worsened the results even more as can be seen in Figure \ref{fig:adam-val-loss-with-without} and Figure \ref{fig:adam-sharpness-with-without} for Adam.
 
 
@@ -162,8 +189,8 @@ Since large batch sizes often suffer from a larger generalization gap we tried t
 
 \section*{Appendix}
 \label{sec:appendix}
-Additional conducted experiments:
-TODO put plots
+Additional plots for the conducted experiments:
+
 
 \newpage
 \bibliographystyle{IEEEtran}
