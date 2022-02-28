@@ -7,6 +7,7 @@
 \usepackage{amssymb}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+\usepackage{float}
 
 \begin{document}
 \title{Large batch sizes for Deep Learning}
@@ -161,7 +162,7 @@ Our tests also showed that in no scenario could an improvement be achieved by SA
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\columnwidth]{img/figure3_val_loss_with_without_sam_adam}
-  \caption{Training and test loss for Adam without (top) and with (bottom) SAM.}
+  \caption{Training and test loss for Adam without (top) and with (bottom) SAM. Clearly both approaches do not yield satisfactory results.}
   \vspace{-3mm}
   \label{fig:adam-val-loss-with-without}
 \end{figure}
@@ -187,13 +188,29 @@ Using different variants of SGD worsened the results even more as can be seen in
 
 Since large batch sizes often suffer from a larger generalization gap we tried to investigate the causes of this phenomena. As a result we focussed on achieving flatter minima as this seems to be a deviance between small and large batch sizes. We apply a solution in form of Sharpness-Aware-Minimization (SAM) to evaluate if SAM can be used to circumvent this issue. We found that although there are some cases where the sharpness is reduced, we could not achieve flatter minima in large batch training. The sharpness score rather increased than decreased. This result suggests that at least for our architecture and setting SAM does not provide an advantage since its runtime is roughly twice as large as without SAM.
 
-\section*{Appendix}
-\label{sec:appendix}
-Additional plots for the conducted experiments:
+
 
 
 \newpage
 \bibliographystyle{IEEEtran}
 \bibliography{literature}
 
+\newpage
+\section*{Appendix}
+\label{sec:appendix}
+Additional plots for the conducted experiments:
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\columnwidth]{img/figure6_val_loss_with_without_sam_sgd_FIXED_LR}
+  \caption{Training and test loss for SGD without (top) and with (bottom) SAM with a fixed learning rate}
+  \vspace{-3mm}
+  \label{fig:adam-val-loss-with-without-fixed}
+\end{figure}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\columnwidth]{img/figure7_sharpness_with_without_sam_sgd_FIXED_LR}
+  \caption{Sharpness scores for SGD without (left) and with (right) SAM for a fixed learning rate. Note the y-axis is not shared.}
+  \vspace{-3mm}
+  \label{fig:adam-sharpness-with-without-fixed}
+\end{figure}
 \end{document}
