@@ -1,2 +1,2 @@
-model_checkpoint_path: "model_lr_0.032_diff_bs_1024_opt_ADAM_sam_NONE.tf"
-all_model_checkpoint_paths: "model_lr_0.032_diff_bs_1024_opt_ADAM_sam_NONE.tf"
+model_checkpoint_path: "model_fixed_lr_diff_bs_1024_opt_ADAM_sam_ASAM.tf"
+all_model_checkpoint_paths: "model_fixed_lr_diff_bs_1024_opt_ADAM_sam_ASAM.tf"
